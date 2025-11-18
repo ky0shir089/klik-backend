@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 
 class RV extends Model
 {
@@ -39,11 +41,16 @@ class RV extends Model
 
     public function account()
     {
-        return $this->belongsTo(BankAccount::class, 'bank_account_id', 'id');
+        return $this->belongsTo(BankAccount::class, 'bank_account_id', 'account_number');
     }
 
     public function customer()
     {
         return $this->belongsTo(Customer::class, 'customer_id', 'id');
+    }
+
+    public function used_rv(): HasOneThrough
+    {
+        return $this->HasOneThrough(Payment::class, PaymentRv::class, "rv_id", "id", "id", "payment_id");
     }
 }

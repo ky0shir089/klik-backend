@@ -6,9 +6,12 @@ use App\Http\Resources\GetResource;
 use App\Models\Bank;
 use App\Models\BankAccount;
 use App\Models\ChartOfAccount;
+use App\Models\Customer;
 use App\Models\Menu;
 use App\Models\Module;
+use App\Models\PaymentVoucher;
 use App\Models\Role;
+use App\Models\RV;
 use App\Models\TypeTrx;
 use Illuminate\Http\Request;
 
@@ -72,7 +75,6 @@ class SelectController extends Controller
 
     public function typeTrx(Request $request)
     {
-        info($request);
         $query = TypeTrx::query()
             ->with(["trx_dtl", "trx_dtl.coa"])
             ->where("is_active", true)
@@ -90,6 +92,58 @@ class SelectController extends Controller
         $query = BankAccount::query()
             ->with(["bank", "coa"])
             ->orderBy("account_name", "asc")
+            ->get();
+
+        return new GetResource($query);
+    }
+
+    public function titipanPelunasan(Request $request)
+    {
+        $query = RV::query()
+            ->with(["type_trx", "account", "account.bank"])
+            ->where("coa_id", 58)
+            ->whereNull("customer_id")
+            ->when($request->search, function ($query, $search) {
+                $query->whereAny([
+                    "rv_no",
+                    "date",
+                    "description",
+                    "starting_balance",
+                ], "ilike", "%$search%");
+            })
+            ->orderBy("id", "asc")
+            ->paginate($request->size);
+
+        return new GetResource($query);
+    }
+
+    public function unpaidBidder(Request $request)
+    {
+        $query = Customer::query()
+            ->with(["auctions"])
+            ->whereRelation("auctions.units", "payment_status", "UNPAID")
+            ->when($request->search, function ($query, $search) {
+                $query->where("name", "ilike", "%$search%");
+            })
+            ->orderBy("id", "desc")
+            ->paginate($request->size);
+
+        return new GetResource($query);
+    }
+
+    public function unpaidPayment()
+    {
+        $query = PaymentVoucher::query()
+            ->with([
+                'repayment',
+                'repayment.customer',
+                'supplier',
+                'supplier_account',
+                'supplier_account.supplier',
+                'supplier_account.bank',
+            ])
+            ->where("status", "NEW")
+            ->orderBy("id", "desc")
             ->get();
 
         return new GetResource($query);

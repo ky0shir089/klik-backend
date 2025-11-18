@@ -28,4 +28,9 @@ class PaymentDetail extends Model
     {
         return $this->belongsTo(Unit::class, 'unit_id', 'id');
     }
+
+    public function auction(): BelongsTo
+    {
+        return $this->belongsTo(Auction::class, 'auction_id', 'id');
+    }
 }

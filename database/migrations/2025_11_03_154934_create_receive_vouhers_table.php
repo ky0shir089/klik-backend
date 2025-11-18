@@ -14,20 +14,23 @@ return new class extends Migration
         Schema::create('receive_vouchers', function (Blueprint $table) {
             $table->id();
             $table->string("rv_no");
-            $table->string("date");
+            $table->dateTime("date");
             $table->foreignId("type_trx_id")->constrained("type_trxes")->cascadeOnDelete();
             $table->string("description");
             $table->string("pay_method")->default("BANK");
-            $table->foreignId("bank_account_id")->constrained("bank_accounts")->cascadeOnDelete();
+            $table->string("bank_account_id");
             $table->foreignId("coa_id")->constrained("chart_of_accounts")->cascadeOnDelete();
             $table->unsignedInteger("starting_balance")->default(0);
             $table->unsignedInteger("used_balance")->default(0);
             $table->unsignedInteger("ending_balance")->default(0);
+            $table->string("journal_number")->nullable();
             $table->string("status")->default("NEW");
-            $table->foreignId("customer_id")->nullable()->constrained("customers")->cascadeOnDelete();
+            $table->foreignId("customer_id")->nullable()->constrained("customers", "klik_bidder_id")->cascadeOnDelete();
             $table->foreignId("created_by")->constrained("users")->cascadeOnDelete();
             $table->foreignId("updated_by")->nullable()->constrained("users")->cascadeOnDelete();
             $table->timestamps();
+
+            $table->foreign("bank_account_id")->references("account_number")->on("bank_accounts")->cascadeOnDelete();
         });
     }
 

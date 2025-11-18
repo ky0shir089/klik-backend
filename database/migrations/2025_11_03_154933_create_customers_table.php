@@ -13,9 +13,10 @@ return new class extends Migration
     {
         Schema::create('customers', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger("klik_bidder_id");
+            $table->unsignedBigInteger("klik_bidder_id")->unique();
             $table->string("ktp")->unique();
             $table->string("name");
+            $table->string("va_number")->unique();
             $table->foreignId("created_by")->constrained("users")->cascadeOnDelete();
             $table->foreignId("updated_by")->nullable()->constrained("users")->cascadeOnDelete();
             $table->timestamps();

@@ -18,7 +18,11 @@ return new class extends Migration
             $table->string("police_number");
             $table->string("chassis_number");
             $table->string("engine_number");
-            $table->unsignedBigInteger("amount");
+            $table->string("contract_number")->nullable();
+            $table->string("package_number")->nullable();
+            $table->unsignedBigInteger("price");
+            $table->unsignedBigInteger("admin_fee");
+            $table->unsignedBigInteger("final_price");
             $table->string("payment_status")->default("UNPAID");
             $table->foreignId("created_by")->constrained("users")->cascadeOnDelete();
             $table->foreignId("updated_by")->nullable()->constrained("users")->cascadeOnDelete();

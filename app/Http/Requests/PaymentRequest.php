@@ -26,10 +26,8 @@ class PaymentRequest extends FormRequest
             'branch_id' => ['required', 'integer'],
             'branch_name' => ['required', 'string'],
             'customer_id' => ['required', 'integer', 'exists:customers,klik_bidder_id'],
-            'total_unit' => ['required', 'integer'],
-            'total_amount' => ['required', 'integer'],
-            'units' => ['required', 'array'],
-            'rvs' => ['required', 'array'],
+            'units' => ['required', 'array', 'min:1'],
+            'rvs' => ['required', 'array', 'min:1'],
             'created_by' => ['integer', 'exists:users,id'],
             'updated_by' => ['nullable', 'integer', 'exists:users,id'],
         ];

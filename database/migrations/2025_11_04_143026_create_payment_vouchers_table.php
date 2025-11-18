@@ -19,7 +19,7 @@ return new class extends Migration
             $table->foreignId("bank_account_id")->nullable()->constrained("bank_accounts")->cascadeOnDelete();
             $table->foreignId("supplier_id")->constrained("suppliers")->cascadeOnDelete();
             $table->foreignId("supplier_account_id")->constrained("supplier_accounts")->cascadeOnDelete();
-            $table->string("pv_process_id");
+            $table->morphs("processable");
             $table->unsignedInteger("pv_amount");
             $table->unsignedInteger("rv_amount");
             $table->unsignedInteger("rv_balance")->default(0);

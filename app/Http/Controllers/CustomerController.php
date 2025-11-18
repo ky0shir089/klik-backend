@@ -25,11 +25,12 @@ class CustomerController extends Controller
         }
 
         $query = Customer::query()
+            ->with(["auctions"])
             ->whereRelation("auctions.units", "payment_status", "UNPAID")
             ->when($request->search, function ($query, $search) {
                 $query->where("name", "ilike", "%$search%");
             })
-            ->orderBy("id", "asc")
+            ->orderBy("id", "desc")
             ->paginate($request->size);
 
         return new GetResource($query);
@@ -77,7 +78,8 @@ class CustomerController extends Controller
             "units.auction",
             "rvs" => function ($query) {
                 $query->select("customer_id", "id", "rv_no", "date", "description", "ending_balance")
-                    ->where("status", "NEW");
+                    ->where("status", "NEW")
+                    ->orderBy("ending_balance", "asc");
             },
         ]));
     }

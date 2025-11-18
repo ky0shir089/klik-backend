@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Auction extends Model
@@ -31,5 +32,10 @@ class Auction extends Model
     public function units(): HasMany
     {
         return $this->hasMany(Unit::class, 'auction_id', 'id');
+    }
+
+    public function customer(): BelongsTo
+    {
+        return $this->BelongsTo(Customer::class, 'customer_id', 'klik_bidder_id');
     }
 }

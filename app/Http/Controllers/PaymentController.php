@@ -54,20 +54,6 @@ class PaymentController extends Controller
         DB::beginTransaction();
 
         try {
-            $sql = Payment::create($request->safe()->except(["units", "rvs"]) + [
-                'created_by' => auth()->id(),
-                'updated_at' => null,
-            ]);
-
-            $units = [];
-            foreach ($request->units as $unit) {
-                $units[] = [
-                    "unit_id" => $unit,
-                    "created_by" => auth()->id(),
-                ];
-            }
-            $sql->units()->createMany($units);
-
             $rvs = [];
             foreach ($request->rvs as $rv) {
                 $rvData = RV::find($rv);
@@ -79,8 +65,36 @@ class PaymentController extends Controller
                     ];
                 }
             }
-            $sql->rvs()->createMany($rvs);
             $total_rv = collect($rvs)->sum("rv_amount");
+
+            $units = [];
+            $totalAmount = 0;
+            foreach ($request->units as $unit) {
+                $unitData = Unit::find($unit);
+                $totalAmount += $unitData->amount;
+                $units[] = [
+                    "unit_id" => $unit,
+                    "created_by" => auth()->id(),
+                ];
+            }
+
+            if ($total_rv < $totalAmount) {
+                return response()->json([
+                    "success" => false,
+                    "message" => "RV amount is less than unit amount",
+                ]);
+            }
+
+            $sql = Payment::create($request->safe()->except(["units", "rvs"]) + [
+                'total_unit' => count($units),
+                'total_amount' => $totalAmount,
+                'status' => "REQUEST",
+                'created_by' => auth()->id(),
+                'updated_at' => null,
+            ]);
+
+            $sql->units()->createMany($units);
+            $sql->rvs()->createMany($rvs);
 
             Unit::whereIn("id", $request->units)->update([
                 'payment_status' => 'REQUEST',
@@ -89,16 +103,15 @@ class PaymentController extends Controller
                 'status' => 'USED',
             ]);
 
-            $pv = new PaymentVoucher;
-            $pv->supplier_id = 1;
-            $pv->supplier_account_id = 1;
-            $pv->pv_process_id = $sql->id;
-            $pv->pv_amount = $request->total_amount;
-            $pv->rv_amount = $total_rv;
-            $pv->status = "NEW";
-            $pv->trx_dtl_id = 2;
-            $pv->created_by = auth()->id();
-            $pv->save();
+            $sql->pv()->create([
+                "supplier_id" => 1,
+                "supplier_account_id" => 1,
+                "pv_amount" => $totalAmount,
+                "rv_amount" => $total_rv,
+                "status" => "NEW",
+                "trx_dtl_id" => 2,
+                "created_by" => auth()->id(),
+            ]);
 
             DB::commit();
 
@@ -130,6 +143,7 @@ class PaymentController extends Controller
         return new GetResource($payment->load([
             "units",
             "units.unit",
+            "units.unit.auction",
             "rvs",
             "rvs.rv:id,rv_no,date,description",
             "customer"

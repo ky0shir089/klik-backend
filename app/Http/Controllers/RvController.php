@@ -33,8 +33,11 @@ class RvController extends Controller
 
         $query = RV::query()
             ->with(["type_trx", "account", "account.bank"])
-            ->where("coa_id", 58)
-            ->whereNull("customer_id")
+            ->withSum([
+                "used_rv" => function ($query) {
+                    $query->where("status", "!=", "PAID");
+                }
+            ], "total_amount")
             ->when($request->search, function ($query, $search) {
                 $query->whereAny([
                     "rv_no",
@@ -43,7 +46,7 @@ class RvController extends Controller
                     "starting_balance",
                 ], "ilike", "%$search%");
             })
-            ->orderBy("id", "asc")
+            ->orderBy("id", "desc")
             ->paginate($request->size);
 
         return new GetResource($query);

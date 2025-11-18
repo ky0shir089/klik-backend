@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AuctionController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\bankAccountController;
 use App\Http\Controllers\BankController;
@@ -14,6 +15,7 @@ use App\Http\Controllers\RvController;
 use App\Http\Controllers\SelectController;
 use App\Http\Controllers\TrxDetailController;
 use App\Http\Controllers\TypeTrxController;
+use App\Http\Controllers\UploadRvController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -68,6 +70,7 @@ Route::middleware('auth:sanctum')
                     ->group(function () {
                         Route::resource('rv', RvController::class);
                         Route::resource('pv', PaymentVoucherController::class);
+                        Route::post('upload-rv', UploadRvController::class);
                     });
             });
 
@@ -75,6 +78,7 @@ Route::middleware('auth:sanctum')
             ->group(function () {
                 Route::prefix('v1')
                     ->group(function () {
+                        Route::resource('auction', AuctionController::class);
                         Route::resource('customer', CustomerController::class);
                         Route::resource('payment', PaymentController::class);
                     });
@@ -92,6 +96,9 @@ Route::middleware('auth:sanctum')
                         Route::get('bank', [SelectController::class, 'bank']);
                         Route::get('type-trx', [SelectController::class, 'typeTrx']);
                         Route::get('bank-account', [SelectController::class, 'bankAccount']);
+                        Route::get('titipan-pelunasan', [SelectController::class, 'titipanPelunasan']);
+                        Route::get('unpaid-bidder', [SelectController::class, 'unpaidBidder']);
+                        Route::get('unpaid-payment', [SelectController::class, 'unpaidPayment']);
                     });
             });
     });

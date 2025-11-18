@@ -14,8 +14,7 @@ class Customer extends Model
         'klik_bidder_id',
         'ktp',
         'name',
-        'branch_id',
-        'branch_name',
+        'va_number',
         'created_by',
         'updated_by',
         'updated_at'

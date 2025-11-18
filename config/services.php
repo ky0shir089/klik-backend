@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'klik' => [
+        'token' => env('KLIK_API_TOKEN'),
+    ],
+
 ];

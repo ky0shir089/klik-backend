@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class PaymentVoucher extends Model
 {
@@ -15,7 +16,8 @@ class PaymentVoucher extends Model
         'bank_account_id',
         'supplier_id',
         'supplier_account_id',
-        'pv_process_id',
+        'processable_type',
+        'processable_id',
         'pv_amount',
         'rv_amount',
         'rv_balance',
@@ -35,9 +37,14 @@ class PaymentVoucher extends Model
         'updated_at',
     ];
 
+    public function processable(): MorphTo
+    {
+        return $this->morphTo();
+    }
+
     public function repayment(): BelongsTo
     {
-        return $this->BelongsTo(Payment::class, 'pv_process_id', 'id');
+        return $this->BelongsTo(Payment::class, 'processable_id', 'id');
     }
 
     public function supplier(): BelongsTo
