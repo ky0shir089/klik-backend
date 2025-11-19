@@ -42,11 +42,6 @@ class PaymentVoucher extends Model
         return $this->morphTo();
     }
 
-    public function repayment(): BelongsTo
-    {
-        return $this->BelongsTo(Payment::class, 'processable_id', 'id');
-    }
-
     public function supplier(): BelongsTo
     {
         return $this->BelongsTo(Supplier::class, 'supplier_id', 'id');

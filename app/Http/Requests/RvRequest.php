@@ -25,7 +25,7 @@ class RvRequest extends FormRequest
             'date' => ['required', 'date'],
             'type_trx_id' => ['required', 'integer', 'exists:type_trxes,id'],
             'description' => ['required', 'string'],
-            'bank_account_id' => ['required', 'integer', 'exists:bank_accounts,id'],
+            'bank_account_id' => ['required', 'integer', 'exists:bank_accounts,account_number'],
             'coa_id' => ['required', 'integer', 'exists:chart_of_accounts,id'],
             'starting_balance' => ['required', 'integer'],
             'used_balance' => ['integer'],

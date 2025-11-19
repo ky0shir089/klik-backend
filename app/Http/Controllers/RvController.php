@@ -150,6 +150,7 @@ class RvController extends Controller
             $sql = Customer::firstOrCreate(
                 ['ktp' => $request->ktp],
                 $request->safe()->only(["klik_bidder_id", "ktp", "name"]) + [
+                    'va_number' => $request->ktp,
                     'created_by' => auth()->id(),
                     'updated_at' => null,
                 ]
@@ -187,7 +188,9 @@ class RvController extends Controller
                         'police_number' => $unit['nopol'],
                         'chassis_number' => $unit['noka'],
                         'engine_number' => $unit['nosin'],
-                        'amount' => $unit['harga'],
+                        'price' => $unit['harga'],
+                        'admin_fee' => 150000,
+                        'final_price' => $unit['harga'] + 150000,
                         'created_by' => auth()->id(),
                         'created_at' => now(),
                     ];

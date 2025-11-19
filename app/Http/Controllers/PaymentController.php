@@ -71,7 +71,7 @@ class PaymentController extends Controller
             $totalAmount = 0;
             foreach ($request->units as $unit) {
                 $unitData = Unit::find($unit);
-                $totalAmount += $unitData->amount;
+                $totalAmount += $unitData->final_price;
                 $units[] = [
                     "unit_id" => $unit,
                     "created_by" => auth()->id(),

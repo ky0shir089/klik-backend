@@ -135,8 +135,8 @@ class SelectController extends Controller
     {
         $query = PaymentVoucher::query()
             ->with([
-                'repayment',
-                'repayment.customer',
+                'processable',
+                'processable.customer',
                 'supplier',
                 'supplier_account',
                 'supplier_account.supplier',

@@ -144,28 +144,28 @@ class UploadRvController extends Controller
 
                             Unit::insert($data_unit);
                         }
-
-                        $values = [];
-
-                        foreach ($chunk->first() as $row) {
-                            $values[] = [
-                                "rv_no" => 'RV' . $year . Str::padLeft($count_rv++, 5, '0'),
-                                "date" => $row["payment_date"],
-                                "type_trx_id" => 1,
-                                "description" => 'Terima Titipan Pelunasan#' . $row["va_number"],
-                                "bank_account_id" => $row["bank_account_id"],
-                                "coa_id" => 58,
-                                "starting_balance" => $row["starting_balance"],
-                                "ending_balance" => $row["starting_balance"],
-                                "journal_number" => $row["journal_number"],
-                                "customer_id" => $filter["id_bidder"] ?? 0,
-                                "created_by" => auth()->id(),
-                                "updated_at" => null
-                            ];
-                        }
-
-                        RV::insert($values);
                     }
+
+                    $values = [];
+
+                    foreach ($chunk->first() as $row) {
+                        $values[] = [
+                            "rv_no" => 'RV' . $year . Str::padLeft($count_rv++, 5, '0'),
+                            "date" => $row["payment_date"],
+                            "type_trx_id" => 1,
+                            "description" => 'Terima Titipan Pelunasan#' . $row["va_number"],
+                            "bank_account_id" => $row["bank_account_id"],
+                            "coa_id" => 58,
+                            "starting_balance" => $row["starting_balance"],
+                            "ending_balance" => $row["starting_balance"],
+                            "journal_number" => $row["journal_number"],
+                            "customer_id" => $filter["id_bidder"] ?? null,
+                            "created_by" => auth()->id(),
+                            "updated_at" => null
+                        ];
+                    }
+
+                    RV::insert($values);
                 }
 
                 $success = true;

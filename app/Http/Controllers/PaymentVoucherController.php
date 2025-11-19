@@ -29,8 +29,8 @@ class PaymentVoucherController extends Controller
 
         $query = PaymentVoucher::query()
             ->with([
-                'repayment',
-                'repayment.customer',
+                'processable',
+                'processable.customer',
                 'supplier',
                 'supplier_account',
                 'supplier_account.supplier',
@@ -70,7 +70,7 @@ class PaymentVoucherController extends Controller
                 $pv = PaymentVoucher::find($payment);
                 $pv_amount = $pv->pv_amount;
 
-                $rvs = $pv->repayment->rvs;
+                $rvs = $pv->processable->rvs;
 
                 foreach ($rvs as $rv) {
                     if ($pv_amount > 0) {
@@ -105,7 +105,7 @@ class PaymentVoucherController extends Controller
                 $trx_coa_id = $pv->trx_dtl->trx->id;
                 $bank_coa_id = $pv->bank_account->coa_id;
 
-                $pv->repayment()->update([
+                $pv->processable()->update([
                     "status" => "PAID",
                     "updated_by" => auth()->id(),
                 ]);

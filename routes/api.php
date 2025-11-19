@@ -15,6 +15,7 @@ use App\Http\Controllers\RvController;
 use App\Http\Controllers\SelectController;
 use App\Http\Controllers\TrxDetailController;
 use App\Http\Controllers\TypeTrxController;
+use App\Http\Controllers\UploadDataUnitController;
 use App\Http\Controllers\UploadRvController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
@@ -81,6 +82,7 @@ Route::middleware('auth:sanctum')
                         Route::resource('auction', AuctionController::class);
                         Route::resource('customer', CustomerController::class);
                         Route::resource('payment', PaymentController::class);
+                        Route::post('upload-data-unit', UploadDataUnitController::class);
                     });
             });
 
