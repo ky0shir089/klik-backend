@@ -73,6 +73,7 @@ class UploadDataUnitController extends Controller
                         $unit->contract_number = $item["contract_number"];
                         $unit->package_number = $item["package_number"];
                         $unit->updated_by = auth()->id();
+                        $unit->updated_at = now();
                         $unit->save();
                     }
                 }

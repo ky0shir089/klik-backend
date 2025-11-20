@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Auction;
 use App\Models\Customer;
+use App\Models\GL;
 use App\Models\RV;
 use App\Models\Unit;
 use App\Services\FileUploadService;
@@ -98,7 +99,7 @@ class UploadRvController extends Controller
                     $va_number = collect($chunk)->keys()->first();
 
                     $filter = collect($result)->filter(function ($item) use ($va_number) {
-                        return $item['identitas_ktp'] == $va_number;
+                        return $item['nomor_va'] == $va_number;
                     })->first();
 
                     if ($filter) {
@@ -135,8 +136,8 @@ class UploadRvController extends Controller
                                     'chassis_number' => $unit['noka'],
                                     'engine_number' => $unit['nosin'],
                                     'price' => $unit['harga'],
-                                    'admin_fee' => 150000,
-                                    'final_price' => $unit['harga'] + 150000,
+                                    'admin_fee' => $unit['biaya_admin'],
+                                    'final_price' => $unit['harga_total'],
                                     'created_by' => auth()->id(),
                                     'created_at' => now(),
                                 ];
@@ -149,6 +150,31 @@ class UploadRvController extends Controller
                     $values = [];
 
                     foreach ($chunk->first() as $row) {
+                        $gl = [
+                            "gl_no" => 'RV' . $year . Str::padLeft($count_rv, 5, '0'),
+                            "date" => $row["payment_date"],
+                            "type" => 'IN',
+                            "description" => 'Terima Titipan Pelunasan#' . $row["va_number"],
+                            "created_by" => auth()->id(),
+                            "updated_at" => null,
+                        ];
+
+                        $debit = [
+                            ...$gl,
+                            "coa_id" => 58,
+                            "debit" => $row["starting_balance"],
+                            "credit" => 0,
+                        ];
+
+                        $credit = [
+                            ...$gl,
+                            "coa_id" => 8,
+                            "debit" => 0,
+                            "credit" => $row["starting_balance"],
+                        ];
+
+                        GL::insert([$debit, $credit]);
+
                         $values[] = [
                             "rv_no" => 'RV' . $year . Str::padLeft($count_rv++, 5, '0'),
                             "date" => $row["payment_date"],
@@ -161,6 +187,7 @@ class UploadRvController extends Controller
                             "journal_number" => $row["journal_number"],
                             "customer_id" => $filter["id_bidder"] ?? null,
                             "created_by" => auth()->id(),
+                            "created_at" => now(),
                             "updated_at" => null
                         ];
                     }
