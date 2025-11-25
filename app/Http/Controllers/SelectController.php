@@ -12,6 +12,7 @@ use App\Models\Module;
 use App\Models\PaymentVoucher;
 use App\Models\Role;
 use App\Models\RV;
+use App\Models\Supplier;
 use App\Models\TypeTrx;
 use Illuminate\Http\Request;
 
@@ -144,6 +145,17 @@ class SelectController extends Controller
             ])
             ->where("status", "NEW")
             ->orderBy("id", "desc")
+            ->get();
+
+        return new GetResource($query);
+    }
+
+    public function supplier()
+    {
+        $query = Supplier::query()
+            ->with(["accounts","accounts.bank"])
+            ->where("is_active", true)
+            ->orderBy("name", "asc")
             ->get();
 
         return new GetResource($query);

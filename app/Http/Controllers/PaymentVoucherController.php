@@ -70,32 +70,35 @@ class PaymentVoucherController extends Controller
                 $pv = PaymentVoucher::find($payment);
                 $pv_amount = $pv->pv_amount;
 
-                $rvs = $pv->processable->rvs;
 
-                foreach ($rvs as $rv) {
-                    if ($pv_amount > 0) {
-                        $ending_balance = $rv->rv->ending_balance;
-                        $starting_balance = $rv->rv->starting_balance;
+                if ($pv->trx_dtl_id == 2) {
+                    $rvs = $pv->processable->rvs;
 
-                        $used_balance = $ending_balance >= $pv_amount ? $pv_amount : $starting_balance;
-                        $ending_balance = $ending_balance - $used_balance;
+                    foreach ($rvs as $rv) {
+                        if ($pv_amount > 0) {
+                            $ending_balance = $rv->rv->ending_balance;
+                            $starting_balance = $rv->rv->starting_balance;
 
-                        $pv_amount = $pv_amount - $used_balance;
+                            $used_balance = $ending_balance >= $pv_amount ? $pv_amount : $starting_balance;
+                            $ending_balance = $ending_balance - $used_balance;
 
-                        $rv->rv()->update([
-                            "used_balance" => $used_balance,
-                            "ending_balance" => $ending_balance,
-                            "status" => $ending_balance == 0 ? "CLOSED" : "NEW",
-                            "customer_id" => $ending_balance == 0 ? $rv->rv->customer_id : NULL,
-                            "updated_by" => auth()->id(),
-                        ]);
+                            $pv_amount = $pv_amount - $used_balance;
+
+                            $rv->rv()->update([
+                                "used_balance" => $used_balance,
+                                "ending_balance" => $ending_balance,
+                                "status" => $ending_balance == 0 ? "CLOSED" : "NEW",
+                                "customer_id" => $ending_balance == 0 ? $rv->rv->customer_id : NULL,
+                                "updated_by" => auth()->id(),
+                            ]);
+                        }
                     }
                 }
 
                 $pv->pv_no = $pv_no;
                 $pv->description = $request->description;
                 $pv->bank_account_id = $request->bank_account_id;
-                $pv->rv_balance = $pv->rv_amount - $pv->pv_amount;
+                $pv->rv_balance = $pv->rv_balance == 0 ? 0 : $pv->rv_amount - $pv->pv_amount;
                 $pv->status = "PAID";
                 $pv->paid_date = now();
                 $pv->updated_by = auth()->id();

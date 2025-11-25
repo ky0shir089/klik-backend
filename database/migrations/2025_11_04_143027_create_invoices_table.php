@@ -15,14 +15,12 @@ return new class extends Migration
             $table->id();
             $table->string("invoice_no");
             $table->foreignId("rv_id")->nullable()->constrained("receive_vouchers")->cascadeOnDelete();
-            $table->foreignId("customer_id")->constrained("customers")->cascadeOnDelete();
-            $table->foreignId("bank_account_id")->constrained("bank_accounts")->cascadeOnDelete();
+            $table->foreignId("supplier_account_id")->constrained("supplier_accounts")->cascadeOnDelete();
             $table->string("status")->default("REQUEST");
             $table->string("payment_method")->default("BANK");
             $table->string("description");
             $table->unsignedBigInteger("amount");
             $table->foreignId("inv_coa_id")->constrained("chart_of_accounts")->cascadeOnDelete();
-            $table->foreignId("trx_id")->constrained("type_trxes")->cascadeOnDelete();
             $table->foreignId("pv_id")->nullable()->constrained("payment_vouchers")->cascadeOnDelete();
             $table->foreignId("created_by")->constrained("users")->cascadeOnDelete();
             $table->foreignId("updated_by")->nullable()->constrained("users")->cascadeOnDelete();

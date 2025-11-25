@@ -68,7 +68,7 @@ class RvController extends Controller
 
         try {
             $year = date('y');
-            $rv_no = 'RV' . $year   . Str::padLeft(RV::count() + 1, 5, '0');
+            $rv_no = 'RV' . $year . Str::padLeft(RV::count() + 1, 5, '0');
 
             $sql = RV::create($request->validated() + [
                 'rv_no' => $rv_no,

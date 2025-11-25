@@ -6,6 +6,7 @@ use App\Http\Controllers\bankAccountController;
 use App\Http\Controllers\BankController;
 use App\Http\Controllers\ChartOfAccountController;
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\PaymentController;
@@ -72,6 +73,7 @@ Route::middleware('auth:sanctum')
                         Route::resource('rv', RvController::class);
                         Route::resource('pv', PaymentVoucherController::class);
                         Route::post('upload-rv', UploadRvController::class);
+                        Route::resource('invoice', InvoiceController::class);
                     });
             });
 
@@ -101,6 +103,7 @@ Route::middleware('auth:sanctum')
                         Route::get('titipan-pelunasan', [SelectController::class, 'titipanPelunasan']);
                         Route::get('unpaid-bidder', [SelectController::class, 'unpaidBidder']);
                         Route::get('unpaid-payment', [SelectController::class, 'unpaidPayment']);
+                        Route::get('supplier', [SelectController::class, 'supplier']);
                     });
             });
     });
