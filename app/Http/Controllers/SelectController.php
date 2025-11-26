@@ -153,7 +153,7 @@ class SelectController extends Controller
     public function supplier()
     {
         $query = Supplier::query()
-            ->with(["accounts","accounts.bank"])
+            ->with(["account","account.bank"])
             ->where("is_active", true)
             ->orderBy("name", "asc")
             ->get();

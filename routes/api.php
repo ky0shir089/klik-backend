@@ -14,6 +14,7 @@ use App\Http\Controllers\PaymentVoucherController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\RvController;
 use App\Http\Controllers\SelectController;
+use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\TrxDetailController;
 use App\Http\Controllers\TypeTrxController;
 use App\Http\Controllers\UploadDataUnitController;
@@ -74,6 +75,7 @@ Route::middleware('auth:sanctum')
                         Route::resource('pv', PaymentVoucherController::class);
                         Route::post('upload-rv', UploadRvController::class);
                         Route::resource('invoice', InvoiceController::class);
+                        Route::resource('supplier', SupplierController::class);
                     });
             });
 

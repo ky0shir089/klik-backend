@@ -33,11 +33,11 @@ class UploadDataUnitController extends Controller
 
         $collection = (new FastExcel())->import(storage_path("app/public/" . $path), function ($line) {
             return [
-                "contract_number" => $line["NO KONTRAK"],
-                "police_number" => $line["NO POL"],
-                "chassis_number" => $line["NO RANGKA"],
-                "engine_number" => $line["NO MESIN"],
-                "package_number" => $line["NOPAKET"],
+                "contract_number" => trim($line["NO KONTRAK"]),
+                "police_number" => trim($line["NO POL"]),
+                "chassis_number" => trim($line["NO RANGKA"]),
+                "engine_number" => trim($line["NO MESIN"]),
+                "package_number" => trim($line["NOPAKET"]),
             ];
         });
 
@@ -65,10 +65,11 @@ class UploadDataUnitController extends Controller
                 foreach ($array as $item) {
                     $unit = Unit::query()
                         ->where("police_number", $item["police_number"])
-                        ->where("chassis_number", $item["chassis_number"])
-                        ->where("engine_number", $item["engine_number"])
+                        // ->where("chassis_number", $item["chassis_number"])
+                        // ->where("engine_number", $item["engine_number"])
                         ->first();
-                        
+                    info($unit);
+
                     if ($unit) {
                         $unit->contract_number = $item["contract_number"];
                         $unit->package_number = $item["package_number"];
