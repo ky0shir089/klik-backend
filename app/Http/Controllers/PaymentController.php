@@ -8,11 +8,11 @@ use App\Http\Resources\GetResource;
 use App\Http\Resources\StoreResource;
 use App\Http\Resources\UpdateResource;
 use App\Models\Payment;
-use App\Models\PaymentVoucher;
 use App\Models\RV;
 use App\Models\Unit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Spatie\LaravelPdf\Facades\Pdf;
 
 class PaymentController extends Controller
 {
@@ -88,7 +88,7 @@ class PaymentController extends Controller
             $sql = Payment::create($request->safe()->except(["units", "rvs"]) + [
                 'total_unit' => count($units),
                 'total_amount' => $totalAmount,
-                'status' => "REQUEST",
+                'status' => "NEW",
                 'created_by' => auth()->id(),
                 'updated_at' => null,
             ]);
@@ -108,7 +108,7 @@ class PaymentController extends Controller
                 "supplier_account_id" => 1,
                 "pv_amount" => $totalAmount,
                 "rv_amount" => $total_rv,
-                "status" => "NEW",
+                "status" => "REQUEST",
                 "trx_dtl_id" => 2,
                 "created_by" => auth()->id(),
             ]);
@@ -184,5 +184,13 @@ class PaymentController extends Controller
         $payment->delete();
 
         return new DeleteResource($payment);
+    }
+
+    public function pdf(Payment $payment)
+    {
+        $customer = $payment->customer;
+        info($customer);
+        $html = "<h1>{$customer->name}</h1>";
+        return Pdf::html($html)->save(storage_path("app/public/memo/invoce.pdf"));
     }
 }

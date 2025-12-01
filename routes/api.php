@@ -7,6 +7,7 @@ use App\Http\Controllers\BankController;
 use App\Http\Controllers\ChartOfAccountController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\MemoPaymentController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\PaymentController;
@@ -14,6 +15,7 @@ use App\Http\Controllers\PaymentVoucherController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\RvController;
 use App\Http\Controllers\SelectController;
+use App\Http\Controllers\SppController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\TrxDetailController;
 use App\Http\Controllers\TypeTrxController;
@@ -29,6 +31,7 @@ Route::get('/user', function (Request $request) {
 
 Route::post("auth/sign-up", [AuthController::class, "signUp"]);
 Route::post("auth/sign-in", [AuthController::class, "signIn"]);
+Route::get("pdf/{payment}", [PaymentController::class, "pdf"]);
 
 Route::middleware('auth:sanctum')
     ->group(function () {
@@ -87,6 +90,8 @@ Route::middleware('auth:sanctum')
                         Route::resource('customer', CustomerController::class);
                         Route::resource('payment', PaymentController::class);
                         Route::post('upload-data-unit', UploadDataUnitController::class);
+                        Route::get('memo-payment/{payment}', MemoPaymentController::class);
+                        Route::resource('spp', SppController::class);
                     });
             });
 

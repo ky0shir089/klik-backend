@@ -7,10 +7,10 @@ use App\Http\Resources\DeleteResource;
 use App\Http\Resources\GetResource;
 use App\Http\Resources\StoreResource;
 use App\Http\Resources\UpdateResource;
-use App\Models\bankAccount;
+use App\Models\BankAccount;
 use Illuminate\Http\Request;
 
-class bankAccountController extends Controller
+class BankAccountController extends Controller
 {
     /**
      * Display a listing of the resource.

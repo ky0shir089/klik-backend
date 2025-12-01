@@ -40,11 +40,12 @@ class UploadRvController extends Controller
 
         $collection = (new FastExcel())->import(storage_path("app/public/" . $path), function ($line) {
             return [
-                "auction_date" => trim($line["Tgl Event"]),
+                "auction_date" => $line["Tgl Event"] == "" ? "" : Carbon::parse($line["Tgl Event"])->format('Y-m-d'),
                 "description" => "Terima Titipan Pelunasan#" . trim($line["VA Number"]),
                 "bank_account_id" => trim($line["Account Number"]),
                 "va_number" => trim($line["VA Number"]),
-                "payment_date" => trim($line["Payment Date"]),
+                "customer_name" => trim($line["Customer Name"]),
+                "payment_date" => $line["Payment Date"] == "" ? "" : $line["Payment Date"],
                 "journal_number" => trim($line["Journal Number"]),
                 "starting_balance" => trim($line["Payment Amount"]),
             ];
@@ -57,8 +58,9 @@ class UploadRvController extends Controller
             '*.description' => 'required|string',
             '*.bank_account_id' => 'required|string',
             '*.va_number' => 'required|string',
+            '*.customer_name' => 'required|string',
             '*.payment_date' => 'required|date',
-            '*.journal_number' => 'required|integer|unique:receive_vouchers,journal_number',
+            '*.journal_number' => 'required|string|unique:receive_vouchers,journal_number',
             '*.starting_balance' => 'required|integer',
         ], [
             '*.auction_date.required' => 'Baris #:position: Tgl Event Kosong',
@@ -66,6 +68,7 @@ class UploadRvController extends Controller
             '*.description.required' => 'Baris #:position: VA Number Kosong',
             '*.bank_account_id.required' => 'Baris #:position: Account Number Kosong',
             '*.va_number.required' => 'Baris #:position: VA Number Kosong',
+            '*.customer_name.required' => 'Baris #:position: Customer Name Kosong',
             '*.payment_date.required' => 'Baris #:position: Payment Date Kosong',
             '*.payment_date.date' => 'Baris #:position: Format Payment Date Salah',
             '*.journal_number.required' => 'Baris #:position: Journal Number Kosong',
@@ -225,8 +228,8 @@ class UploadRvController extends Controller
                                     $auction->klik_auction_id  = $lelang['id_lelang'];
                                     $auction->auction_name = $lelang['nama_lelang'];
                                     $auction->auction_date = $lelang['tgl_lelang'];
-                                    $auction->branch_id = $filter['id_cabang'];
-                                    $auction->branch_name = $filter['balai_lelang'];
+                                    $auction->branch_id = $lelang['id_cabang'];
+                                    $auction->branch_name = $lelang['balai_lelang'];
                                     $auction->created_by = auth()->id();
                                     $auction->save();
 
@@ -255,7 +258,6 @@ class UploadRvController extends Controller
                             $values = [];
 
                             foreach ($rv as $row) {
-                                info($row);
                                 $gl = [
                                     "gl_no" => 'RV' . $year . Str::padLeft($count_rv, 5, '0'),
                                     "date" => $row["payment_date"],
@@ -281,11 +283,13 @@ class UploadRvController extends Controller
 
                                 GL::insert([$debit, $credit]);
 
+                                $customer_name = Str::replace("KLIKLELANG-", "", $row["customer_name"]);
+
                                 $values[] = [
                                     "rv_no" => 'RV' . $year . Str::padLeft($count_rv++, 5, '0'),
                                     "date" => Carbon::parse($row["payment_date"])->format('Y-m-d H:i:s'),
                                     "type_trx_id" => 1,
-                                    "description" => 'Terima Titipan Pelunasan#' . $row["va_number"],
+                                    "description" => 'Terima Titipan Pelunasan#' . $row["va_number"] . "_" . $customer_name,
                                     "bank_account_id" => $row["bank_account_id"],
                                     "coa_id" => 58,
                                     "starting_balance" => $row["starting_balance"],

@@ -54,6 +54,6 @@ class Payment extends Model
 
     public function rv(): HasOneThrough
     {
-        return $this->HasOneThrough(ReceiveVoucher::class, PaymentRv::class, 'payment_id', 'id', 'id', 'rv_id');
+        return $this->HasOneThrough(RV::class, PaymentRv::class, 'payment_id', 'id', 'id', 'rv_id');
     }
 }

@@ -68,7 +68,6 @@ class UploadDataUnitController extends Controller
                         // ->where("chassis_number", $item["chassis_number"])
                         // ->where("engine_number", $item["engine_number"])
                         ->first();
-                    info($unit);
 
                     if ($unit) {
                         $unit->contract_number = $item["contract_number"];
