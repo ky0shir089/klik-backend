@@ -20,7 +20,7 @@
                     <tr>
                         <th class="text-left">No. Memo</th>
                         <td>:</td>
-                        <td>{{ $spp_no }}</td>
+                        <td>{{ $memo_no }}</td>
                     </tr>
                     <tr>
                         <th class="text-left">Kepada Yth</th>
@@ -30,7 +30,7 @@
                     <tr>
                         <th class="text-left">Tanggal</th>
                         <td>:</td>
-                        <td>{{ $payment_date }}</td>
+                        <td>{{ $memo->created_at->format('d F Y') }}</td>
                     </tr>
                     <tr>
                         <th class="text-left">Perihal</th>
@@ -51,48 +51,29 @@
 
             <br />
 
-            <table class="w-full border-black table-auto">
+            <table class="w-full border border-black table-auto">
                 <thead>
                     <tr class="bg-red-500">
-                        <th class="border-black">No</th>
-                        <th class="border-black">Cabang</th>
-                        <th class="border-black">Jumlah Unit</th>
-                        <th class="border-black">Harga Terbentuk</th>
-                        <th class="border-black">Berita Acara</th>
+                        <th class="border border-black">Cabang</th>
+                        <th class="border border-black">Jumlah Unit</th>
+                        <th class="border border-black">Harga Terbentuk</th>
+                        <th class="border border-black">Berita Acara</th>
                     </tr>
                 </thead>
 
                 <tbody>
-                    @php($index = 1)
-                    @foreach ($groups as $date => $branches)
-                        @foreach ($branches as $branch => $unit)
-                            <tr>
-                                <td class="p-1 text-xs border-black">{{ $index++ }}</td>
-                                <td class="p-1 text-xs border-black">{{ $branch }}</td>
-                                <td class="p-1 text-xs text-center border-black">{{ $unit->count() }}</td>
-                                <td class="p-1 text-xs text-right border-black">
-                                    {{ Number::format($unit->sum('price')) }}
-                                </td>
-                                <td class="p-1 text-xs border-black">
-                                    PELUNASAN FIF_KLIK EVENT
-                                    {{ $date }}
-                                </td>
-                            </tr>
-                        @endforeach
-                    @endforeach
-                </tbody>
-
-                <tfoot>
                     <tr>
-                        <th colspan="2" class="p-1 text-xs border-black text-center">Total</th>
-                        <th class="p-1 text-xs border-black text-center">
-                            {{ $total_unit }}
-                        </th>
-                        <th class="p-1 text-xs border-black text-right">
-                            {{ Number::format($total_amount) }}
-                        </th>
-                        <th class="p-1 text-xs border-black"></th>
+                        <td class="p-1 text-xs border border-black">{{ $memo->branch_name }}</td>
+                        <td class="p-1 text-xs text-center border border-black">{{ $memo->total_unit }}</td>
+                        <td class="p-1 text-xs text-right border border-black">
+                            {{ Number::format($memo->total_amount) }}
+                        </td>
+                        <td class="p-1 text-xs border border-black">
+                            PELUNASAN FIF_KLIK EVENT
+                            {{ $memo->units[0]->unit->auction->auction_date->format('d M Y') }}
+                        </td>
                     </tr>
+                </tbody>
             </table>
 
             <br />

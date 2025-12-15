@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\GetResource;
 use App\Http\Resources\StoreResource;
-use App\Models\Payment;
-use App\Models\PaymentVoucher;
+use App\Models\Customer;
 use App\Models\Spp;
+use App\Models\SppDetail;
+use App\Models\Unit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -14,9 +16,23 @@ class SppController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        //
+        if (!auth()->user()->tokenCan("spp:browse")) {
+            return response()->json([
+                "success" => false,
+                "message" => "Unauthorized",
+            ], 403);
+        }
+
+        $query = Spp::query()
+            ->with([
+                "customer:klik_bidder_id,name",
+            ])
+            ->where("status", "NEW")
+            ->paginate($request->size);
+
+        return new GetResource($query);
     }
 
     /**
@@ -24,7 +40,7 @@ class SppController extends Controller
      */
     public function store(Request $request)
     {
-        if (!auth()->user()->tokenCan("repayment:add")) {
+        if (!auth()->user()->tokenCan("spp:add")) {
             return response()->json([
                 "success" => false,
                 "message" => "Unauthorized",
@@ -34,42 +50,42 @@ class SppController extends Controller
         DB::beginTransaction();
 
         try {
-            $pv_amount = 0;
-            $rv_amount = 0;
-            $spp_no = Spp::latest()->first() + 1;
+            $units = Unit::select("id", "price", "auction_id")
+                ->with("auction")
+                ->whereIn("id", $request->units)
+                ->get();
 
-            foreach ($request->id as $id) {
-                $payment = Payment::find($id);
-                $payment->status = "REQUEST";
-                $payment->save();
+            $totalUnit = $units->count();
+            $totalAmount = $units->sum("price");
+            $authId = auth()->id();
 
-                $spp = new Spp;
-                $spp->spp_no = $spp_no;
-                $spp->payment_id = $id;
-                $spp->created_by = auth()->id();
-                $spp->updated_at = null;
-                $spp->save();
+            $spp = new Spp;
+            $spp->customer_id = $request->customer_id;
+            $spp->branch_name = $units[0]->auction->branch_name;
+            $spp->total_unit = $totalUnit;
+            $spp->total_amount = $totalAmount;
+            $spp->created_by = $authId;
+            $spp->save();
 
-                $pv_amount += $payment->total_amount;
-                $rv_amount += $payment->rv->ending_balance;
+            foreach ($units as $unit) {
+                $details[] = [
+                    "spp_id" => $spp->id,
+                    "unit_id" => $unit->id,
+                    "created_by" => $authId,
+                    "created_at" => now(),
+                ];
+
+                Unit::find($unit->id)->update([
+                    "spp_status" => "CREATED",
+                    "updated_by" => $authId,
+                ]);
             }
 
-            $sql = new PaymentVoucher();
-            $sql->supplier_id = 1;
-            $sql->supplier_account_id = 1;
-            $sql->pv_amount = $pv_amount;
-            $sql->rv_amount = $rv_amount;
-            $sql->status = "NEW";
-            $sql->trx_dtl_id = 2;
-            $sql->processable_type = "App\Models\Spp";
-            $sql->processable_id = $spp_no;
-            $sql->created_by = auth()->id();
-            $spp->updated_at = null;
-            $sql->save();
+            SppDetail::insert($details);
 
             DB::commit();
 
-            return new StoreResource($sql);
+            return new StoreResource($spp);
         } catch (\Throwable $th) {
             info($th->getMessage());
 
@@ -87,7 +103,21 @@ class SppController extends Controller
      */
     public function show(Spp $spp)
     {
-        //
+        if (!auth()->user()->tokenCan("spp:read")) {
+            return response()->json([
+                "success" => false,
+                "message" => "Unauthorized",
+            ], 403);
+        }
+
+        $spp->load([
+            "customer",
+            "details",
+            "details.unit",
+            "details.unit.auction",
+        ]);
+
+        return new GetResource($spp);
     }
 
     /**

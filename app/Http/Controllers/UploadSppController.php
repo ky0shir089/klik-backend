@@ -9,14 +9,14 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Rap2hpoutre\FastExcel\FastExcel;
 
-class UploadDataUnitController extends Controller
+class UploadSppController extends Controller
 {
     /**
      * Handle the incoming request.
      */
     public function __invoke(Request $request)
     {
-        if (!auth()->user()->tokenCan("repayment:add")) {
+        if (!auth()->user()->tokenCan("upload-spp:add")) {
             return response()->json([
                 "success" => false,
                 "message" => "Unauthorized",
@@ -46,10 +46,14 @@ class UploadDataUnitController extends Controller
         $validator = Validator::make($array, [
             '*.contract_number' => 'required',
             '*.police_number' => 'required',
+            '*.chassis_number' => 'required',
+            '*.engine_number' => 'required',
             '*.package_number' => 'required',
         ], [
             '*.contract_number.required' => 'Baris #:position: No Kontrak Kosong',
             '*.police_number.required' => 'Baris #:position: Nopol Kosong',
+            '*.chassis_number.required' => 'Baris #:position: Noka Kosong',
+            '*.engine_number.required' => 'Baris #:position: Nosin Kosong',
             '*.package_number.required' => 'Baris #:position: No Paket Kosong',
         ]);
 
@@ -61,20 +65,26 @@ class UploadDataUnitController extends Controller
         } else {
             DB::beginTransaction();
 
-            try {
-                foreach ($array as $item) {
-                    $unit = Unit::query()
-                        ->where("police_number", $item["police_number"])
-                        // ->where("chassis_number", $item["chassis_number"])
-                        // ->where("engine_number", $item["engine_number"])
-                        ->first();
+            $collections = collect($array)->chunk(100);
+            $authId = auth()->id();
 
-                    if ($unit) {
-                        $unit->contract_number = $item["contract_number"];
-                        $unit->package_number = $item["package_number"];
-                        $unit->updated_by = auth()->id();
-                        $unit->updated_at = now();
-                        $unit->save();
+            try {
+                foreach ($collections as $rows) {
+                    foreach ($rows as $item) {
+                        $unit = Unit::query()
+                            ->where("police_number", $item["police_number"])
+                            ->orWhere("chassis_number", $item["chassis_number"])
+                            ->orWhere("engine_number", $item["engine_number"])
+                            ->first();
+
+                        if ($unit) {
+                            $unit->contract_number = $item["contract_number"];
+                            $unit->package_number = $item["package_number"];
+                            $unit->spp_status = "UPLOADED";
+                            $unit->updated_by =  $authId;
+                            $unit->updated_at = now();
+                            $unit->save();
+                        }
                     }
                 }
 

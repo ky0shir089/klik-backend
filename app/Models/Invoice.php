@@ -33,17 +33,17 @@ class Invoice extends Model
 
     public function supplier_account(): BelongsTo
     {
-        return $this->BelongsTo(SupplierAccount::class, 'supplier_account_id', 'id');
+        return $this->belongsTo(SupplierAccount::class, 'supplier_account_id', 'id');
     }
 
     public function trx_dtl(): BelongsTo
     {
-        return $this->BelongsTo(TrxDtl::class, 'inv_coa_id', 'coa_id');
+        return $this->belongsTo(TrxDtl::class, 'inv_coa_id', 'coa_id');
     }
 
     public function coa(): BelongsTo
     {
-        return $this->BelongsTo(ChartOfAccount::class, 'inv_coa_id', 'id');
+        return $this->belongsTo(ChartOfAccount::class, 'inv_coa_id', 'id');
     }
 
     public function pv(): MorphOne
@@ -53,6 +53,6 @@ class Invoice extends Model
 
     public function customer(): HasOneThrough
     {
-        return $this->HasOneThrough(Supplier::class, SupplierAccount::class, 'supplier_id', 'id', 'supplier_account_id', 'id');
+        return $this->hasOneThrough(Supplier::class, SupplierAccount::class, 'supplier_id', 'id', 'supplier_account_id', 'id');
     }
 }

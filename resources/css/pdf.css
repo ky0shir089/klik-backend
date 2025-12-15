@@ -1,0 +1,59 @@
+.min-h-screen {
+    min-height: 100vh;
+}
+.p-6 {
+    padding: 24px;
+}
+.text-3xl {
+    font-size: 30px;
+    line-height: 1.2;
+}
+.font-medium {
+    --tw-font-weight: 500;
+    font-weight: 500;
+}
+@property --tw-font-weight {
+    syntax: "*";
+    inherits: false;
+}
+.text-left {
+    text-align: left;
+}
+.text-justify {
+    text-align: justify;
+}
+.w-full {
+    width: 100%;
+}
+.border {
+    border-style: var(--tw-border-style);
+    border-width: 1px;
+}
+@property --tw-border-style {
+    syntax: "*";
+    inherits: false;
+    initial-value: solid;
+}
+.border-black {
+    border: 1px solid black;
+    border-collapse: collapse;
+}
+.bg-red-500 {
+    background-color: red;
+}
+.p-1 {
+    padding: 4px;
+}
+.text-center {
+    text-align: center;
+}
+.text-right {
+    text-align: right;
+}
+.mt-14 {
+    margin-top: 56px;
+}
+.text-xs {
+    font-size: 12px;
+    line-height: 1.333333;
+}

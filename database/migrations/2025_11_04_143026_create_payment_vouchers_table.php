@@ -21,8 +21,6 @@ return new class extends Migration
             $table->foreignId("supplier_account_id")->constrained("supplier_accounts")->cascadeOnDelete();
             $table->morphs("processable");
             $table->unsignedInteger("pv_amount");
-            $table->unsignedInteger("rv_amount");
-            $table->unsignedInteger("rv_balance")->default(0);
             $table->string("status")->default("NEW");
             $table->date("paid_date")->nullable();
             $table->foreignId("trx_dtl_id")->constrained("type_trxes")->cascadeOnDelete();
