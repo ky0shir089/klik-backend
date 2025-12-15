@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class PaymentRequest extends FormRequest
+class AuctionRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -22,10 +22,7 @@ class PaymentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'payment_date' => ['required', 'date'],
-            'spps' => ['required', 'array', 'min:1'],
-            'created_by' => ['integer', 'exists:users,id'],
-            'updated_by' => ['nullable', 'integer', 'exists:users,id'],
+            "auction_date" => ["required", "date"],
         ];
     }
 }

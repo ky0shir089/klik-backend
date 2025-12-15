@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class PaymentDetail extends Model
 {
@@ -11,7 +12,7 @@ class PaymentDetail extends Model
 
     protected $fillable = [
         'payment_id',
-        'unit_id',
+        'spp_id',
         'created_by',
         'updated_by',
         'updated_at'
@@ -32,5 +33,10 @@ class PaymentDetail extends Model
     public function auction(): BelongsTo
     {
         return $this->belongsTo(Auction::class, 'auction_id', 'id');
+    }
+
+    public function spp(): HasOne
+    {
+        return $this->hasOne(Spp::class, 'id', 'spp_id');
     }
 }

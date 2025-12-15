@@ -116,7 +116,6 @@ class InvoiceController extends Controller
                     "supplier_id" => $invoice->supplier_account->supplier->id,
                     "supplier_account_id" => $invoice->supplier_account_id,
                     "pv_amount" => $invoice->amount,
-                    "rv_amount" => 0,
                     "status" => "NEW",
                     "trx_dtl_id" => $invoice->trx_dtl->trx_id,
                     "created_by" => auth()->id(),

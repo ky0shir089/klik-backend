@@ -47,7 +47,7 @@ class UserController extends Controller
      */
     public function store(CreateUserRequest $request)
     {
-        if (!auth()->user()->tokenCan("user:create")) {
+        if (!auth()->user()->tokenCan("user:add")) {
             return response()->json([
                 "message" => "Unauthorized",
                 "status" => false

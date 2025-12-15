@@ -14,9 +14,7 @@ class Payment extends Model
 
     protected $fillable = [
         'payment_date',
-        'branch_id',
-        'branch_name',
-        'customer_id',
+        'spp_no',
         'total_unit',
         'total_amount',
         'status',
@@ -37,9 +35,9 @@ class Payment extends Model
         return $this->morphOne(PaymentVoucher::class, 'processable');
     }
 
-    public function units(): HasMany
+    public function spps(): HasMany
     {
-        return $this->HasMany(PaymentDetail::class, 'payment_id', 'id');
+        return $this->hasMany(PaymentDetail::class, 'payment_id', 'id');
     }
 
     public function rvs(): HasMany

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuctionController;
+use App\Http\Controllers\AuctionCustomerController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\bankAccountController;
 use App\Http\Controllers\BankController;
@@ -13,14 +14,16 @@ use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PaymentVoucherController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\RvClassificationController;
 use App\Http\Controllers\RvController;
+use App\Http\Controllers\RvUploadController;
 use App\Http\Controllers\SelectController;
 use App\Http\Controllers\SppController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\TrxDetailController;
 use App\Http\Controllers\TypeTrxController;
-use App\Http\Controllers\UploadDataUnitController;
 use App\Http\Controllers\UploadRvController;
+use App\Http\Controllers\UploadSppController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -31,7 +34,6 @@ Route::get('/user', function (Request $request) {
 
 Route::post("auth/sign-up", [AuthController::class, "signUp"]);
 Route::post("auth/sign-in", [AuthController::class, "signIn"]);
-Route::get("pdf/{payment}", [PaymentController::class, "pdf"]);
 
 Route::middleware('auth:sanctum')
     ->group(function () {
@@ -79,6 +81,12 @@ Route::middleware('auth:sanctum')
                         Route::post('upload-rv', UploadRvController::class);
                         Route::resource('invoice', InvoiceController::class);
                         Route::resource('supplier', SupplierController::class);
+                        Route::resource('rv-classification', RvClassificationController::class);
+                    });
+
+                Route::prefix('v2')
+                    ->group(function () {
+                        Route::post('upload-rv', RvUploadController::class);
                     });
             });
 
@@ -88,8 +96,9 @@ Route::middleware('auth:sanctum')
                     ->group(function () {
                         Route::resource('auction', AuctionController::class);
                         Route::resource('customer', CustomerController::class);
+                        Route::resource('auction-customer', AuctionCustomerController::class);
                         Route::resource('payment', PaymentController::class);
-                        Route::post('upload-data-unit', UploadDataUnitController::class);
+                        Route::post('upload-spp', UploadSppController::class);
                         Route::get('memo-payment/{payment}', MemoPaymentController::class);
                         Route::resource('spp', SppController::class);
                     });

@@ -14,9 +14,7 @@ return new class extends Migration
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
             $table->date("payment_date");
-            $table->unsignedBigInteger("branch_id");
-            $table->string("branch_name");
-            $table->foreignId("customer_id")->constrained("customers", "klik_bidder_id")->cascadeOnDelete();
+            $table->string("spp_no");
             $table->unsignedInteger("total_unit");
             $table->unsignedInteger("total_amount");
             $table->string("status")->default('NEW');
@@ -28,21 +26,21 @@ return new class extends Migration
         Schema::create('payment_details', function (Blueprint $table) {
             $table->id();
             $table->foreignId("payment_id")->constrained("payments")->cascadeOnDelete();
-            $table->foreignId("unit_id")->constrained("units")->cascadeOnDelete();
+            $table->foreignId("spp_id")->constrained("spps")->cascadeOnDelete();
             $table->foreignId("created_by")->constrained("users")->cascadeOnDelete();
             $table->foreignId("updated_by")->nullable()->constrained("users")->cascadeOnDelete();
             $table->timestamps();
         });
 
-        Schema::create('payment_rvs', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId("payment_id")->constrained("payments")->cascadeOnDelete();
-            $table->foreignId("rv_id")->constrained("receive_vouchers")->cascadeOnDelete();
-            $table->unsignedInteger("rv_amount");
-            $table->foreignId("created_by")->constrained("users")->cascadeOnDelete();
-            $table->foreignId("updated_by")->nullable()->constrained("users")->cascadeOnDelete();
-            $table->timestamps();
-        });
+        // Schema::create('payment_rvs', function (Blueprint $table) {
+        //     $table->id();
+        //     $table->foreignId("payment_id")->constrained("payments")->cascadeOnDelete();
+        //     $table->foreignId("rv_id")->constrained("receive_vouchers")->cascadeOnDelete();
+        //     $table->unsignedInteger("rv_amount");
+        //     $table->foreignId("created_by")->constrained("users")->cascadeOnDelete();
+        //     $table->foreignId("updated_by")->nullable()->constrained("users")->cascadeOnDelete();
+        //     $table->timestamps();
+        // });
     }
 
     /**

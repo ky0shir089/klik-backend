@@ -9,6 +9,7 @@ use App\Http\Resources\StoreResource;
 use App\Http\Resources\UpdateResource;
 use App\Models\GL;
 use App\Models\PaymentVoucher;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -60,48 +61,60 @@ class PaymentVoucherController extends Controller
         DB::beginTransaction();
 
         try {
-            $year = date("y");
-            $pv_no = 'PV' . $year . Str::padLeft(PaymentVoucher::count() + 1, 5, '0');
+            $currentYear = date('y');
+            $findLastRvDate = PaymentVoucher::select("created_at")->latest()->first();
+            $lastPvDate = $findLastRvDate->date ?? now();
+            $lastPvYear = Carbon::parse($lastPvDate)->format('y');
+            if ($currentYear > $lastPvYear) {
+                $countPv = 1;
+            } else {
+                $countPv = PaymentVoucher::query()
+                    ->where("created_at", ">=", date('Y') . "-01-01")
+                    ->where("created_at", "<=", date('Y') . "-12-31")
+                    ->count() + 1;
+            }
+            $pvNo = 'PV' . $currentYear . Str::padLeft($countPv++, 5, '0');
+
             $total_amount = 0;
             $trx_coa_id = 0;
             $bank_coa_id = 0;
+            $authId = auth()->id();
 
             foreach ($request->pvs as $payment) {
                 $pv = PaymentVoucher::find($payment);
-                $pv_amount = $pv->pv_amount;
+                // $pv_amount = $pv->pv_amount;
 
 
-                if ($pv->trx_dtl_id == 2) {
-                    $rvs = $pv->processable->rvs;
+                // if ($pv->trx_dtl_id == 2) {
+                //     $rvs = $pv->processable->rvs;
 
-                    foreach ($rvs as $rv) {
-                        if ($pv_amount > 0) {
-                            $ending_balance = $rv->rv->ending_balance;
-                            $starting_balance = $rv->rv->starting_balance;
+                //     foreach ($rvs as $rv) {
+                //         if ($pv_amount > 0) {
+                //             $ending_balance = $rv->rv->ending_balance;
+                //             $starting_balance = $rv->rv->starting_balance;
 
-                            $used_balance = $ending_balance >= $pv_amount ? $pv_amount : $starting_balance;
-                            $ending_balance = $ending_balance - $used_balance;
+                //             $used_balance = $ending_balance >= $pv_amount ? $pv_amount : $starting_balance;
+                //             $ending_balance = $ending_balance - $used_balance;
 
-                            $pv_amount = $pv_amount - $used_balance;
+                //             $pv_amount = $pv_amount - $used_balance;
 
-                            $rv->rv()->update([
-                                "used_balance" => $used_balance,
-                                "ending_balance" => $ending_balance,
-                                "status" => $ending_balance == 0 ? "CLOSED" : "NEW",
-                                "customer_id" => $ending_balance == 0 ? $rv->rv->customer_id : NULL,
-                                "updated_by" => auth()->id(),
-                            ]);
-                        }
-                    }
-                }
+                //             $rv->rv()->update([
+                //                 "used_balance" => $used_balance,
+                //                 "ending_balance" => $ending_balance,
+                //                 "status" => $ending_balance == 0 ? "CLOSED" : "NEW",
+                //                 "customer_id" => $ending_balance == 0 ? $rv->rv->customer_id : NULL,
+                //                 "updated_by" => $authId,
+                //             ]);
+                //         }
+                //     }
+                // }
 
-                $pv->pv_no = $pv_no;
+                $pv->pv_no = $pvNo;
                 $pv->description = $request->description;
                 $pv->bank_account_id = $request->bank_account_id;
-                $pv->rv_balance = $pv->rv_balance == 0 ? 0 : $pv->rv_amount - $pv->pv_amount;
                 $pv->status = "PAID";
                 $pv->paid_date = now();
-                $pv->updated_by = auth()->id();
+                $pv->updated_by = $authId;
                 $pv->save();
 
                 $total_amount += $pv->pv_amount;
@@ -110,16 +123,16 @@ class PaymentVoucherController extends Controller
 
                 $pv->processable()->update([
                     "status" => "PAID",
-                    "updated_by" => auth()->id(),
+                    "updated_by" => $authId,
                 ]);
             }
 
             $gl = [
-                "gl_no" => $pv_no,
+                "gl_no" => $pvNo,
                 "date" => now(),
                 "type" => 'OUT',
                 "description" => $request->description,
-                "created_by" => auth()->id(),
+                "created_by" => $authId,
                 "updated_at" => null,
             ];
 

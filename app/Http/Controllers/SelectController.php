@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\GetResource;
+use App\Models\Auction;
 use App\Models\Bank;
 use App\Models\BankAccount;
 use App\Models\ChartOfAccount;
@@ -12,6 +13,7 @@ use App\Models\Module;
 use App\Models\PaymentVoucher;
 use App\Models\Role;
 use App\Models\RV;
+use App\Models\Spp;
 use App\Models\Supplier;
 use App\Models\TypeTrx;
 use Illuminate\Http\Request;
@@ -121,10 +123,16 @@ class SelectController extends Controller
     public function unpaidBidder(Request $request)
     {
         $query = Customer::query()
-            ->with(["auctions"])
-            ->whereRelation("auctions.units", "payment_status", "UNPAID")
+            ->with([
+                "auctions",
+            ])
+            // ->withSum("detail", "total_amount")
+            // ->withSum("auctions", "total_base_price")
+            // ->withSum("auctions", "total_admin_fee")
+            // ->withSum("auctions", "total_final_price")
             ->when($request->search, function ($query, $search) {
-                $query->where("name", "ilike", "%$search%");
+                $query->where("auction_date", "ilike", "%$search%")
+                    ->orWhere("branch_name", "ilike", "%$search%");
             })
             ->orderBy("id", "desc")
             ->paginate($request->size);
@@ -153,7 +161,7 @@ class SelectController extends Controller
     public function supplier()
     {
         $query = Supplier::query()
-            ->with(["account","account.bank"])
+            ->with(["account", "account.bank"])
             ->where("is_active", true)
             ->orderBy("name", "asc")
             ->get();

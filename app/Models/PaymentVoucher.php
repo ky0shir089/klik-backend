@@ -19,8 +19,6 @@ class PaymentVoucher extends Model
         'processable_type',
         'processable_id',
         'pv_amount',
-        'rv_amount',
-        'rv_balance',
         'status',
         'paid_date',
         'trx_dtl_id',
@@ -33,7 +31,6 @@ class PaymentVoucher extends Model
     protected $hidden = [
         'created_by',
         'updated_by',
-        'created_at',
         'updated_at',
     ];
 

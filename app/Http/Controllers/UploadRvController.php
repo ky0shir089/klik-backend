@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\ProcessRvImportJob;
 use App\Models\Auction;
 use App\Models\Customer;
 use App\Models\GL;
@@ -23,6 +24,8 @@ class UploadRvController extends Controller
      */
     public function __invoke(Request $request)
     {
+        set_time_limit(300); 
+        
         if (!auth()->user()->tokenCan("rv:add")) {
             return response()->json([
                 "success" => false,
@@ -83,7 +86,6 @@ class UploadRvController extends Controller
             }
         } else {
             $excel_data = collect($array)->groupBy(["auction_date", "va_number"]);
-            // $excel_data = collect($array)->chunk(100);
 
             DB::beginTransaction();
 
@@ -91,108 +93,9 @@ class UploadRvController extends Controller
                 $year = date('y');
                 $count_rv = RV::count() + 1;
 
-                // foreach ($excel_data as $chunk) {
-                //     $values = [];
+                $authId = auth()->id();
 
-                //     foreach ($chunk as $row) {
-                //         $response = Http::withHeaders([
-                //             'Authorization' => 'Bearer ' . config('services.klik')['token'],
-                //         ])->get('https://api.kliklelang.co.id/api/report/v3/hasil_lelang', [
-                //             'date_start' => $row["auction_date"],
-                //             'date_end' => $row["auction_date"],
-                //             'nomor_va' => $row["va_number"],
-                //         ]);
-                //         $result = collect($response["data"])->first();
-
-                //         if ($result) {
-                //             Customer::firstOrCreate(
-                //                 ['ktp' => $result["identitas_ktp"]],
-                //                 [
-                //                     'klik_bidder_id' => $result["id_bidder"],
-                //                     'ktp' => $result["identitas_ktp"],
-                //                     'name' => $result["nama_ktp"],
-                //                     'va_number' => $result["identitas_ktp"],
-                //                     'created_by' => auth()->id(),
-                //                     'updated_at' => null,
-                //                 ]
-                //             );
-
-                //             foreach ($result['lelang'] as $lelang) {
-                //                 $auction = new Auction();
-                //                 $auction->customer_id = $result["id_bidder"];
-                //                 $auction->klik_auction_id  = $lelang['id_lelang'];
-                //                 $auction->auction_name = $lelang['nama_lelang'];
-                //                 $auction->auction_date = $lelang['tgl_lelang'];
-                //                 $auction->branch_id = $result['id_cabang'];
-                //                 $auction->branch_name = $result['balai_lelang'];
-                //                 $auction->created_by = auth()->id();
-                //                 $auction->save();
-
-                //                 $data_unit = [];
-
-                //                 foreach ($lelang['unit'] as $unit) {
-                //                     $data_unit[] = [
-                //                         'auction_id' => $auction->id,
-                //                         'lot_number' => $lelang['no_lot'],
-                //                         'police_number' => $unit['nopol'],
-                //                         'chassis_number' => $unit['noka'],
-                //                         'engine_number' => $unit['nosin'],
-                //                         'price' => $unit['harga'],
-                //                         'admin_fee' => $unit['biaya_admin'],
-                //                         'final_price' => $unit['harga_total'],
-                //                         'created_by' => auth()->id(),
-                //                         'created_at' => now(),
-                //                     ];
-                //                 }
-
-                //                 Unit::insert($data_unit);
-                //             }
-                //         }
-
-                //         $gl = [
-                //             "gl_no" => 'RV' . $year . Str::padLeft($count_rv, 5, '0'),
-                //             "date" => $row["payment_date"],
-                //             "type" => 'IN',
-                //             "description" => 'Terima Titipan Pelunasan#' . $row["va_number"],
-                //             "created_by" => auth()->id(),
-                //             "updated_at" => null,
-                //         ];
-
-                //         $debit = [
-                //             ...$gl,
-                //             "coa_id" => 58,
-                //             "debit" => $row["starting_balance"],
-                //             "credit" => 0,
-                //         ];
-
-                //         $credit = [
-                //             ...$gl,
-                //             "coa_id" => 8,
-                //             "debit" => 0,
-                //             "credit" => $row["starting_balance"],
-                //         ];
-
-                //         GL::insert([$debit, $credit]);
-
-                //         $values[] = [
-                //             "rv_no" => 'RV' . $year . Str::padLeft($count_rv++, 5, '0'),
-                //             "date" => $row["payment_date"],
-                //             "type_trx_id" => 1,
-                //             "description" => 'Terima Titipan Pelunasan#' . $row["va_number"],
-                //             "bank_account_id" => $row["bank_account_id"],
-                //             "coa_id" => 58,
-                //             "starting_balance" => $row["starting_balance"],
-                //             "ending_balance" => $row["starting_balance"],
-                //             "journal_number" => $row["journal_number"],
-                //             "customer_id" => $row["id_bidder"] ?? null,
-                //             "created_by" => auth()->id(),
-                //             "created_at" => now(),
-                //             "updated_at" => null
-                //         ];
-                //     }
-
-                //     RV::insert($values);
-                // }
+                // ProcessRvImportJob::dispatch($excel_data, $year, $count_rv, $authId);
 
                 foreach ($excel_data as $date => $chunk) {
                     $response = Http::withHeaders([
@@ -201,109 +104,128 @@ class UploadRvController extends Controller
                         'date_start' => $date,
                         'date_end' => $date,
                     ]);
-                    $result = $response["data"];
 
-                    if ($result) {
-                        foreach ($chunk as $va => $rv) {
-                            $filter = collect($result)->filter(function ($item) use ($va) {
-                                return $item["nomor_va"] == $va;
-                            })->first();
+                    $result = $response["data"] ?? [];
 
-                            if ($filter) {
-                                Customer::firstOrCreate(
-                                    ['ktp' => $filter["identitas_ktp"]],
-                                    [
-                                        'klik_bidder_id' => $filter["id_bidder"],
-                                        'ktp' => $filter["identitas_ktp"],
-                                        'name' => $filter["nama_ktp"],
-                                        'va_number' => $filter["identitas_ktp"],
-                                        'created_by' => auth()->id(),
-                                        'updated_at' => null,
-                                    ]
-                                );
+                    if (!$result) continue;
 
-                                foreach ($filter['lelang'] as $lelang) {
-                                    $auction = new Auction();
-                                    $auction->customer_id = $filter["id_bidder"];
-                                    $auction->klik_auction_id  = $lelang['id_lelang'];
-                                    $auction->auction_name = $lelang['nama_lelang'];
-                                    $auction->auction_date = $lelang['tgl_lelang'];
-                                    $auction->branch_id = $lelang['id_cabang'];
-                                    $auction->branch_name = $lelang['balai_lelang'];
-                                    $auction->created_by = auth()->id();
-                                    $auction->save();
+                    // ✔ Build VA lookup table for instant O(1) access
+                    $vaLookup = [];
+                    foreach ($result as $row) {
+                        $vaLookup[$row["nomor_va"]] = $row;
+                    }
 
-                                    $data_unit = [];
+                    foreach ($chunk as $va => $rvRows) {
+                        // ✔ No more slow collect()->filter()
+                        $filter = $vaLookup[$va] ?? null;
+                        $customerId = null;
 
-                                    foreach ($lelang['unit'] as $unit) {
-                                        $data_unit[] = [
-                                            'auction_id' => $auction->id,
-                                            'lot_number' => $lelang['no_lot'],
-                                            'police_number' => $unit['nopol'],
-                                            'chassis_number' => $unit['noka'],
-                                            'engine_number' => $unit['nosin'],
-                                            'price' => $unit['harga'],
-                                            'admin_fee' => $unit['biaya_admin'],
-                                            'final_price' => $unit['harga_total'],
-                                            'created_by' => auth()->id(),
-                                            'created_at' => now(),
-                                            "updated_at" => null
-                                        ];
-                                    }
+                        if ($filter) {
+                            // ✔ Use upsert instead of firstOrCreate
+                            $customer = Customer::firstOrCreate(
+                                ['ktp' => $filter["identitas_ktp"]],
+                                [
+                                    'klik_bidder_id' => $filter["id_bidder"],
+                                    'name' => $filter["nama_ktp"],
+                                    'va_number' => $filter["nomor_va"],
+                                    'created_by' => $authId,
+                                    'created_at' => now(),
+                                    'updated_at' => null
+                                ]
+                            );
 
-                                    Unit::insert($data_unit);
+                            $customerId = $customer->klik_bidder_id;
+
+                            $unitInsert = [];
+
+                            foreach ($filter['lelang'] as $lelang) {
+                                $auction = new Auction();
+                                $auction->customer_id = $filter["id_bidder"];
+                                $auction->klik_auction_id = $lelang['id_lelang'];
+                                $auction->auction_name = $lelang['nama_lelang'];
+                                $auction->auction_date = $lelang['tgl_lelang'];
+                                $auction->branch_id = $lelang['id_cabang'];
+                                $auction->branch_name = $lelang['balai_lelang'];
+                                $auction->created_by = $authId;
+                                $auction->updated_at = null;
+                                $auction->save();
+
+                                foreach ($lelang['unit'] as $unit) {
+                                    $unitInsert[] = [
+                                        'auction_id' => $auction->id,
+                                        'lot_number' => $lelang['no_lot'],
+                                        'police_number' => $unit['nopol'],
+                                        'chassis_number' => $unit['noka'],
+                                        'engine_number' => $unit['nosin'],
+                                        'price' => $unit['harga'],
+                                        'admin_fee' => $unit['biaya_admin'],
+                                        'final_price' => $unit['harga_total'],
+                                        'created_by' => $authId,
+                                        'created_at' => now(),
+                                        'updated_at' => null
+                                    ];
                                 }
                             }
 
-                            $values = [];
-
-                            foreach ($rv as $row) {
-                                $gl = [
-                                    "gl_no" => 'RV' . $year . Str::padLeft($count_rv, 5, '0'),
-                                    "date" => $row["payment_date"],
-                                    "type" => 'IN',
-                                    "description" => 'Terima Titipan Pelunasan#' . $row["va_number"],
-                                    "created_by" => auth()->id(),
-                                    "updated_at" => null,
-                                ];
-
-                                $debit = [
-                                    ...$gl,
-                                    "coa_id" => 58,
-                                    "debit" => $row["starting_balance"],
-                                    "credit" => 0,
-                                ];
-
-                                $credit = [
-                                    ...$gl,
-                                    "coa_id" => 8,
-                                    "debit" => 0,
-                                    "credit" => $row["starting_balance"],
-                                ];
-
-                                GL::insert([$debit, $credit]);
-
-                                $customer_name = Str::replace("KLIKLELANG-", "", $row["customer_name"]);
-
-                                $values[] = [
-                                    "rv_no" => 'RV' . $year . Str::padLeft($count_rv++, 5, '0'),
-                                    "date" => Carbon::parse($row["payment_date"])->format('Y-m-d H:i:s'),
-                                    "type_trx_id" => 1,
-                                    "description" => 'Terima Titipan Pelunasan#' . $row["va_number"] . "_" . $customer_name,
-                                    "bank_account_id" => $row["bank_account_id"],
-                                    "coa_id" => 58,
-                                    "starting_balance" => $row["starting_balance"],
-                                    "ending_balance" => $row["starting_balance"],
-                                    "journal_number" => $row["journal_number"],
-                                    "customer_id" => $filter["id_bidder"] ?? null,
-                                    "created_by" => auth()->id(),
-                                    "created_at" => now(),
-                                    "updated_at" => null
-                                ];
-                            }
-
-                            RV::insert($values);
+                            // ✔ bulk insert auctions + units
+                            Unit::insert($unitInsert);
                         }
+
+                        // ---------- RV + GL HANDLING ----------
+                        $rvInsert = [];
+                        $glInsert = [];
+
+                        foreach ($rvRows as $row) {
+                            $glNo = 'RV' . $year . Str::padLeft($count_rv, 5, '0');
+                            // ✔ aggregate both debit + credit into one insert batch
+                            $glInsert[] = [
+                                "gl_no" => $glNo,
+                                "date" => $row["payment_date"],
+                                "type" => 'IN',
+                                "description" => 'Terima Titipan Pelunasan#' . $row["va_number"],
+                                "coa_id" => 58,
+                                "debit" => $row["starting_balance"],
+                                "credit" => 0,
+                                "created_by" => $authId,
+                                "created_at" => now(),
+                                "updated_at" => null,
+                            ];
+
+                            $glInsert[] = [
+                                "gl_no" => $glNo,
+                                "date" => $row["payment_date"],
+                                "type" => 'IN',
+                                "description" => 'Terima Titipan Pelunasan#' . $row["va_number"],
+                                "coa_id" => 8,
+                                "debit" => 0,
+                                "credit" => $row["starting_balance"],
+                                "created_by" => $authId,
+                                "created_at" => now(),
+                                "updated_at" => null,
+                            ];
+
+                            $customerName = Str::replace("KLIKLELANG-", "", $row["customer_name"]);
+
+                            $rvInsert[] = [
+                                "rv_no" => 'RV' . $year . Str::padLeft($count_rv++, 5, '0'),
+                                "date" => Carbon::parse($row["payment_date"]),
+                                "type_trx_id" => 1,
+                                "description" => 'Terima Titipan Pelunasan#' . $row["va_number"] . "_" . $customerName,
+                                "bank_account_id" => $row["bank_account_id"],
+                                "coa_id" => 58,
+                                "starting_balance" => $row["starting_balance"],
+                                "ending_balance" => $row["starting_balance"],
+                                "journal_number" => $row["journal_number"],
+                                "customer_id" => $customerId,
+                                "created_by" => $authId,
+                                "created_at" => now(),
+                                "updated_at" => null
+                            ];
+                        }
+
+                        // ✔ MASS INSERT — super fast
+                        GL::insert($glInsert);
+                        RV::insert($rvInsert);
                     }
                 }
 

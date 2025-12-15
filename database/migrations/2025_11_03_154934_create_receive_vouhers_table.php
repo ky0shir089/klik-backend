@@ -22,6 +22,7 @@ return new class extends Migration
             $table->foreignId("coa_id")->constrained("chart_of_accounts")->cascadeOnDelete();
             $table->unsignedInteger("starting_balance")->default(0);
             $table->unsignedInteger("used_balance")->default(0);
+            $table->unsignedInteger("admin_fee")->default(0);
             $table->unsignedInteger("ending_balance")->default(0);
             $table->string("journal_number")->nullable();
             $table->string("status")->default("NEW");

@@ -13,8 +13,20 @@ return new class extends Migration
     {
         Schema::create('spps', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger("spp_no");
-            $table->foreignId("payment_id")->constrained("payments")->cascadeOnDelete();
+            $table->foreignId("customer_id")->constrained("customers", "klik_bidder_id")->cascadeOnDelete();
+            $table->string("branch_name");
+            $table->unsignedInteger("total_unit");
+            $table->unsignedInteger("total_amount");
+            $table->string("status")->default("NEW");
+            $table->foreignId("created_by")->constrained("users")->cascadeOnDelete();
+            $table->foreignId("updated_by")->nullable()->constrained("users")->cascadeOnDelete();
+            $table->timestamps();
+        });
+
+        Schema::create('spp_details', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId("spp_id")->constrained("spps")->cascadeOnDelete();
+            $table->foreignId("unit_id")->constrained("units", "klik_unit_id")->cascadeOnDelete();
             $table->foreignId("created_by")->constrained("users")->cascadeOnDelete();
             $table->foreignId("updated_by")->nullable()->constrained("users")->cascadeOnDelete();
             $table->timestamps();
@@ -26,6 +38,7 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::dropIfExists('spp_details');
         Schema::dropIfExists('spps');
     }
 };

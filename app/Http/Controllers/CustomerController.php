@@ -17,20 +17,27 @@ class CustomerController extends Controller
      */
     public function index(Request $request)
     {
-        if (!auth()->user()->tokenCan("repayment:browse")) {
+        if (!auth()->user()->tokenCan("rv-classification:browse")) {
             return response()->json([
                 "success" => false,
                 "message" => "Unauthorized",
             ], 403);
         }
 
-        $query = Customer::query()
-            ->with(["auctions"])
-            ->whereRelation("auctions.units", "payment_status", "UNPAID")
+        $query = Customer::select("klik_bidder_id", "name", "va_number")
+            ->withCount("auctions")
+            ->withSum("units", "price")
+            ->withSum("units", "admin_fee")
+            ->withSum("units", "final_price")
+            ->whereRelation("units", "payment_status", "UNPAID")
+            ->whereHas("rvs")
             ->when($request->search, function ($query, $search) {
-                $query->where("name", "ilike", "%$search%");
+                $query->whereAny([
+                    "name",
+                    "va_number",
+                ], "ilike", "%$search%");
             })
-            ->orderBy("id", "desc")
+            ->oldest("id")
             ->paginate($request->size);
 
         return new GetResource($query);
@@ -41,22 +48,7 @@ class CustomerController extends Controller
      */
     public function store(CustomerRequest $request)
     {
-        if (!auth()->user()->tokenCan("repayment:add")) {
-            return response()->json([
-                "success" => false,
-                "message" => "Unauthorized",
-            ], 403);
-        }
-
-        $sql = Customer::firstOrCreate(
-            ['ktp' => $request->ktp],
-            $request->validated() + [
-                'created_by' => auth()->id(),
-                'updated_at' => null,
-            ]
-        );
-
-        return new StoreResource($sql);
+        //
     }
 
     /**
@@ -64,7 +56,7 @@ class CustomerController extends Controller
      */
     public function show(Customer $customer)
     {
-        if (!auth()->user()->tokenCan("repayment:read")) {
+        if (!auth()->user()->tokenCan("rv-classification:read")) {
             return response()->json([
                 "success" => false,
                 "message" => "Unauthorized",
@@ -78,8 +70,9 @@ class CustomerController extends Controller
             "units.auction",
             "rvs" => function ($query) {
                 $query->select("customer_id", "id", "rv_no", "date", "description", "ending_balance")
+                    ->where("ending_balance", ">", 0)
                     ->where("status", "NEW")
-                    ->orderBy("ending_balance", "asc");
+                    ->oldest("id");
             },
         ]));
     }
