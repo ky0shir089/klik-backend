@@ -38,6 +38,7 @@ class UploadSppController extends Controller
                 "chassis_number" => trim($line["NO RANGKA"]),
                 "engine_number" => trim($line["NO MESIN"]),
                 "package_number" => trim($line["NOPAKET"]),
+                "distributed_price" => trim($line["HARGA BID/DISTRIBUSI"]),
             ];
         });
 
@@ -49,12 +50,14 @@ class UploadSppController extends Controller
             '*.chassis_number' => 'required',
             '*.engine_number' => 'required',
             '*.package_number' => 'required',
+            '*.distributed_price' => 'required',
         ], [
             '*.contract_number.required' => 'Baris #:position: No Kontrak Kosong',
             '*.police_number.required' => 'Baris #:position: Nopol Kosong',
             '*.chassis_number.required' => 'Baris #:position: Noka Kosong',
             '*.engine_number.required' => 'Baris #:position: Nosin Kosong',
             '*.package_number.required' => 'Baris #:position: No Paket Kosong',
+            '*.distributed_price.required' => 'Baris #:position: Harga Distribusi Kosong',
         ]);
 
         if ($validator->fails()) {
@@ -80,6 +83,8 @@ class UploadSppController extends Controller
                         if ($unit) {
                             $unit->contract_number = $item["contract_number"];
                             $unit->package_number = $item["package_number"];
+                            $unit->distributed_price = $item["distributed_price"];
+                            $unit->diff_price = $item["distributed_price"] - $unit->price;
                             $unit->spp_status = "UPLOADED";
                             $unit->updated_by =  $authId;
                             $unit->updated_at = now();

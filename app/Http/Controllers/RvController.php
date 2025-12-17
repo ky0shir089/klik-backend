@@ -129,13 +129,19 @@ class RvController extends Controller
             ], 403);
         }
 
-        return new GetResource($rv->load(["type_trx", "account", "account.bank", "account.coa"]));
+        return new GetResource($rv->load([
+            "type_trx",
+            "account",
+            "account.bank",
+            "account.coa",
+            "customer"
+        ]));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(CustomerRequest $request, RV $rv)
+    public function update(Request $request, RV $rv)
     {
         if (!auth()->user()->tokenCan("list-rv:edit")) {
             return response()->json([
@@ -144,74 +150,12 @@ class RvController extends Controller
             ], 403);
         }
 
-        DB::beginTransaction();
+        $rv->update([
+            'customer_id' => null,
+            'updated_by' => auth()->id(),
+        ]);
 
-        try {
-            $sql = Customer::firstOrCreate(
-                ['ktp' => $request->ktp],
-                $request->safe()->only(["klik_bidder_id", "ktp", "name"]) + [
-                    'va_number' => $request->ktp,
-                    'created_by' => auth()->id(),
-                    'updated_at' => null,
-                ]
-            );
-
-            if ($rv->status != "NEW") {
-                return response()->json([
-                    "success" => false,
-                    "message" => "RV already used",
-                ], 400);
-            }
-
-            $rv->update([
-                'customer_id' => $sql->klik_bidder_id,
-                'updated_by' => auth()->id(),
-            ]);
-
-            foreach ($request->lelang as $lelang) {
-                $auction = new Auction;
-                $auction->customer_id = $sql->klik_bidder_id;
-                $auction->klik_auction_id  = $lelang['id_lelang'];
-                $auction->auction_name = $lelang['nama_lelang'];
-                $auction->auction_date = $lelang['tgl_lelang'];
-                $auction->branch_id = $request->branch_id;
-                $auction->branch_name = $request->branch_name;
-                $auction->created_by = auth()->id();
-                $auction->save();
-
-                $data_unit = [];
-
-                foreach ($lelang['unit'] as $unit) {
-                    $data_unit[] = [
-                        'auction_id' => $auction->id,
-                        'lot_number' => $lelang['no_lot'],
-                        'police_number' => $unit['nopol'],
-                        'chassis_number' => $unit['noka'],
-                        'engine_number' => $unit['nosin'],
-                        'price' => $unit['harga'],
-                        'admin_fee' => 150000,
-                        'final_price' => $unit['harga'] + 150000,
-                        'created_by' => auth()->id(),
-                        'created_at' => now(),
-                    ];
-                }
-
-                Unit::insert($data_unit);
-            }
-
-            DB::commit();
-
-            return new UpdateResource($rv);
-        } catch (\Throwable $th) {
-            info($th->getMessage());
-
-            DB::rollBack();
-
-            return response()->json([
-                "success" => false,
-                "message" => $th->getMessage(),
-            ], 500);
-        }
+        return new UpdateResource($rv);
     }
 
     /**

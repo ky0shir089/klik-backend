@@ -46,7 +46,7 @@ class RV extends Model
 
     public function customer()
     {
-        return $this->belongsTo(Customer::class, 'customer_id', 'id');
+        return $this->belongsTo(Customer::class, 'customer_id', 'klik_bidder_id');
     }
 
     public function used_rv(): HasOneThrough
