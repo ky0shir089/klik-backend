@@ -13,6 +13,7 @@ use App\Http\Controllers\MenuController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PaymentVoucherController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\RvClassificationController;
 use App\Http\Controllers\RvController;
@@ -120,6 +121,15 @@ Route::middleware('auth:sanctum')
                         Route::get('unpaid-bidder', [SelectController::class, 'unpaidBidder']);
                         Route::get('unpaid-payment', [SelectController::class, 'unpaidPayment']);
                         Route::get('supplier', [SelectController::class, 'supplier']);
+                    });
+            });
+
+        Route::prefix('report')
+            ->group(function () {
+                Route::prefix('v1')
+                    ->group(function () {
+                        Route::get('report-rv', [ReportController::class, 'reportRv']);
+                        Route::post('report-auction', [ReportController::class, 'reportAuction']);
                     });
             });
     });

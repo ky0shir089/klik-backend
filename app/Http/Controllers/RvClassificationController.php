@@ -11,6 +11,8 @@ use App\Models\Unit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
+use function Laravel\Prompts\info;
+
 class RvClassificationController extends Controller
 {
     /**
@@ -62,11 +64,23 @@ class RvClassificationController extends Controller
                         });
                 }
             ], "final_price")
-            ->whereHas("units", function ($query) {
+            ->withSum([
+                "units" => function ($query) {
+                    $query->where("payment_status", "LUNAS")
+                        ->where(function ($query) {
+                            $query->whereNull("spp_status")
+                                ->orWhere("spp_status", "UPLOADED");
+                        });
+                }
+            ], "diff_price")
+            ->whereHas("units", function ($query) use ($request) {
                 $query->where("payment_status", "LUNAS")
                     ->where(function ($query) {
                         $query->whereNull("spp_status")
                             ->orWhere("spp_status", "UPLOADED");
+                    })
+                    ->when($request->diff == 1, function ($query) {
+                        $query->where("diff_price", "!=", 0);
                     });
             })
             ->when($request->search, function ($query, $search) {
@@ -106,7 +120,7 @@ class RvClassificationController extends Controller
         DB::transaction(function () use ($units, $rvs, $authId, &$totalAmount, &$totalRv, $classifications) {
             foreach ($units as $unit) {
                 $unitData = Unit::find($unit);
-                $totalAmount += $unitData->final_price;
+                $totalAmount = $totalAmount + $unitData->final_price;
 
                 foreach ($rvs as $rv) {
                     $rvData = RV::find($rv);
@@ -145,7 +159,7 @@ class RvClassificationController extends Controller
                         info($totalAmount);
                         $rvData->used_balance = $rvData->used_balance + $totalAmount - $unitData->admin_fee;
                         $rvData->admin_fee = $rvData->admin_fee + $unitData->admin_fee;
-                        $rvData->ending_balance = $rvData->starting_balance - $rvData->used_balance - $rvData->admin_fee;
+                        $rvData->ending_balance = $rvData->starting_balance - $rvData->used_balance - $rvData->admin_fee < 0 ? 0 : $rvData->starting_balance - $rvData->used_balance - $rvData->admin_fee;
                         $rvData->status = $rvData->ending_balance == 0 ? "CLOSED" : "NEW";
                         $rvData->updated_by = $authId;
                         $rvData->save();
@@ -154,7 +168,7 @@ class RvClassificationController extends Controller
                         $totalAmount -= $rvData->used_balance + $rvData->admin_fee;
                         info($totalAmount);
 
-                        if ($totalAmount <= 0) {
+                        if ($totalAmount <= 0 && $rvData->ending_balance > 0) {
                             $totalAmount = 0;
                             break;
                         };
@@ -166,7 +180,6 @@ class RvClassificationController extends Controller
                 $unitData->save();
             }
 
-
             RvClassification::insert($classifications);
         });
 
@@ -175,6 +188,111 @@ class RvClassificationController extends Controller
             "message" => "Rv classification created successfully"
         ]);
     }
+
+    // public function store(RvClassificationRequest $request)
+    // {
+    //     if (!auth()->user()->tokenCan("rv-classification:add")) {
+    //         return response()->json([
+    //             "success" => false,
+    //             "message" => "Unauthorized",
+    //         ], 403);
+    //     }
+
+    //     $units = Unit::select("id", "price", "admin_fee", "final_price")
+    //         ->whereIn("id", $request->units)
+    //         ->oldest("id")
+    //         ->get();
+
+    //     $rvs = RV::select("id", "starting_balance", "used_balance", "admin_fee", "ending_balance")
+    //         ->whereIn("id", $request->rvs)
+    //         ->oldest('id')
+    //         ->get();
+
+    //     $authId = auth()->id();
+
+    //     $totalAmount = $units->sum("final_price");
+    //     $totalRv = $rvs->sum("ending_balance");
+
+    //     if ($totalRv < $totalAmount) {
+    //         return response()->json([
+    //             "success" => false,
+    //             "message" => "Jumlah RV Kurang",
+    //         ], 400);
+    //     }
+
+    //     $calculateAmount = 0;
+    //     $calculateRv = 0;
+
+    //     DB::transaction(function () use ($units, $rvs, $authId) {
+    //         foreach ($units as $unit) {
+    //             $calculateAmount += $unit->price;
+
+    //             foreach ($rvs as $rv) {
+    //                 if ($rv->ending_balance == 0) continue;
+    //                 $calculateRv += $rv->ending_balance;
+
+    //                 $calculate = $rv->ending_balance - $unit->price;
+
+    //                 $classifications[] = [
+    //                     "unit_id" => $unit,
+    //                     "rv_id" => $rv,
+    //                     "rv_amount" => $rv->ending_balance,
+    //                     "unit_final_price" => $unit->final_price,
+    //                     "rv_balance" => $calculate < 0 ? 0 : $calculate,
+    //                     "created_by" => $authId,
+    //                     "created_at" => now(),
+    //                 ];
+
+    //                 if ($calculateAmount > $calculateRv) {
+    //                     info("totalAmount > totalRv");
+    //                     info($calculateAmount);
+    //                     $rvData->used_balance = $rvData->used_balance + $rvData->ending_balance;
+    //                     $rvData->ending_balance = $rvData->ending_balance - $rvData->used_balance;
+    //                     $rvData->status = $rvData->ending_balance == 0 ? "CLOSED" : "NEW";
+    //                     $rvData->updated_by = $authId;
+    //                     $rvData->save();
+    //                     info($rvData);
+
+    //                     $calculateAmount -= $rvData->used_balance;
+    //                     $calculateRv -= $rvData->ending_balance;
+    //                     info($calculateAmount);
+    //                 }
+
+    //                 if ($calculateAmount <= $calculateRv) {
+    //                     info("totalAmount <= totalRv");
+    //                     info($totalAmount);
+    //                     $rvData->used_balance = $rvData->used_balance + $totalAmount - $unitData->admin_fee;
+    //                     $rvData->admin_fee = $rvData->admin_fee + $unitData->admin_fee;
+    //                     $rvData->ending_balance = $rvData->starting_balance - $rvData->used_balance - $rvData->admin_fee < 0 ? 0 : $rvData->starting_balance - $rvData->used_balance - $rvData->admin_fee;
+    //                     $rvData->status = $rvData->ending_balance == 0 ? "CLOSED" : "NEW";
+    //                     $rvData->updated_by = $authId;
+    //                     $rvData->save();
+    //                     info($rvData);
+
+    //                     $calculateAmount -= $rvData->used_balance + $rvData->admin_fee;
+    //                     info($calculateAmount);
+
+    //                     if ($calculateAmount <= 0 && $rvData->ending_balance > 0) {
+    //                         $totalAmount = 0;
+    //                         break;
+    //                     };
+    //                 }
+    //             }
+
+    //             $unit->payment_status = "LUNAS";
+    //             $unit->updated_by = $authId;
+    //             $unit->save();
+    //         }
+
+    //         RvClassification::insert($classifications);
+    //     });
+
+    //     return response()->json([
+    //         "success" => true,
+    //         "message" => "Rv classification created successfully"
+    //     ]);
+    // }
+
 
     /**
      * Display the specified resource.

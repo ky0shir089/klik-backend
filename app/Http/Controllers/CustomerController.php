@@ -26,16 +26,21 @@ class CustomerController extends Controller
 
         $query = Customer::select("klik_bidder_id", "name", "va_number")
             ->withCount("auctions")
+            ->withCount("rvs")
             ->withSum("units", "price")
             ->withSum("units", "admin_fee")
             ->withSum("units", "final_price")
             ->whereRelation("units", "payment_status", "UNPAID")
-            ->whereHas("rvs")
             ->when($request->search, function ($query, $search) {
                 $query->whereAny([
                     "name",
                     "va_number",
                 ], "ilike", "%$search%");
+            })
+            ->when($request->tab == "rv", function ($query) {
+                $query->whereHas("rvs");
+            }, function ($query) {
+                $query->whereDoesntHave("rvs");
             })
             ->oldest("id")
             ->paginate($request->size);
@@ -65,9 +70,11 @@ class CustomerController extends Controller
 
         return new GetResource($customer->load([
             "units" => function ($query) {
-                $query->where("payment_status", "UNPAID");
+                $query->where("payment_status", "UNPAID")
+                    ->oldest("id");
             },
             "units.auction",
+            "units.transactions",
             "rvs" => function ($query) {
                 $query->select("customer_id", "id", "rv_no", "date", "description", "ending_balance")
                     ->where("ending_balance", ">", 0)

@@ -10,6 +10,7 @@ use App\Http\Resources\UpdateResource;
 use App\Models\Auction;
 use App\Models\Customer;
 use App\Models\CustomerAuction;
+use App\Models\Transaction;
 use App\Models\Unit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -69,6 +70,7 @@ class AuctionController extends Controller
         $customers = [];
         $auctions = [];
         $units = [];
+        $transactions = [];
         $authId = auth()->id();
 
         DB::beginTransaction();
@@ -104,12 +106,25 @@ class AuctionController extends Controller
                             'police_number' => $unit['nopol'],
                             'chassis_number' => $unit['noka'],
                             'engine_number' => $unit['nosin'],
-                            'price' => $unit['harga'],
+                            'price' => $unit['harga'] - $unit['potongan_tiket'],
                             'admin_fee' => $unit['biaya_admin'],
                             'final_price' => $unit['harga_total'],
                             'created_by' => $authId,
                             'updated_at' => null
                         ];
+
+                        if (isset($customer['transaksi'])) {
+                            foreach ($customer['transaksi'] as $transaction) {
+                                $transactions[] = [
+                                    'unit_id' => $unit['id_unit'],
+                                    'date' => $transaction['tanggal_upload'],
+                                    'receipt_link' => $transaction['url'],
+                                    'created_by' => $authId,
+                                    'created_at' => now(),
+                                    'updated_at' => null
+                                ];
+                            }
+                        }
                     }
                 }
             }
@@ -117,6 +132,7 @@ class AuctionController extends Controller
             Customer::upsert($customers, ["klik_bidder_id"]);
             Auction::upsert($auctions, ["customer_id", "klik_auction_id"]);
             Unit::upsert($units, ["klik_unit_id"]);
+            Transaction::insert($transactions);
 
             DB::commit();
         } catch (\Throwable $th) {

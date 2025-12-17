@@ -1,0 +1,111 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\RV;
+use App\Models\Unit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Number;
+use Illuminate\Support\Str;
+use Rap2hpoutre\FastExcel\FastExcel;
+
+class ReportController extends Controller
+{
+    private function generateExcelReport($results, $columns, $filename)
+    {
+        function resultsGenerator($results)
+        {
+            foreach ($results as $result) {
+                yield $result;
+            }
+        }
+
+        (new FastExcel(resultsGenerator($results)))->configureOptionsUsing(function ($writer) {
+            $writer->DEFAULT_COLUMN_WIDTH = 18;
+        })->export(storage_path('app/public/' . $filename), function ($row) use ($columns) {
+            return $columns($row);
+        });
+    }
+
+    public function reportRv()
+    {
+        if (!auth()->user()->tokenCan("report-rv:download")) {
+            return response()->json([
+                "success" => false,
+                "message" => "Unauthorized",
+            ], 403);
+        }
+
+        $id = "reports/rv/" . Str::random(6) . ".xlsx";
+
+        $data = RV::query()
+            ->where("coa_id", 58)
+            ->where("ending_balance", "!=", 0)
+            ->get();
+
+        $columns = function ($row) {
+            return [
+                'RV No' => $row->rv_no,
+                'Date' => $row->date,
+                'Description' => $row->description,
+                'Ending Balance' => $row->ending_balance,
+                'Journal Number' => $row->journal_number,
+            ];
+        };
+
+        $this->generateExcelReport($data, $columns, $id);
+
+        return $id;
+    }
+
+    public function reportAuction(Request $request)
+    {
+        if (!auth()->user()->tokenCan("report-auction:download")) {
+            return response()->json([
+                "success" => false,
+                "message" => "Unauthorized",
+            ], 403);
+        }
+
+        $id = "reports/auction/" . Str::random(6) . ".xlsx";
+        $from = Carbon::parse($request->from);
+        $to = Carbon::parse($request->to);
+
+        $data = Unit::query()
+            ->with([
+                "auction",
+                "auction.customer",
+                "spp"
+            ])
+            ->whereRelation("auction", "auction_date", [$from, $to])
+            ->get();
+
+        $columns = function ($row) {
+            return [
+                'Tgl Lelang' => $row->auction->auction_date->format("Y-m-d"),
+                'Nopol' => $row->police_number,
+                'Noka' => $row->chassis_number,
+                'Nosin' => $row->engine_number,
+                'Nomor Paket' => $row->package_number,
+                'Nomor Kontrak' => $row->contract_number,
+                'Status Transaksi' => $row->payment_status,
+                'Status SPP' => $row->spp_status,
+                'Harga Terbentuk' => $row->price,
+                'Harga Admin' => $row->admin_fee,
+                'Harga Total' => $row->final_price,
+                'Harga Distribusi' => $row->distributed_price,
+                'Selisih' => $row->diff_price,
+                'Bidder' => $row->auction->customer->name,
+                'KTP' => $row->auction->customer->ktp,
+                'VA Number' => $row->auction->customer->va_number,
+                'Balai Lelang' => $row->auction->branch_name,
+                'Tgl Spp' => $row->spp?->created_at?->format("Y-m-d"),
+            ];
+        };
+
+        $this->generateExcelReport($data, $columns, $id);
+
+        return $id;
+    }
+}

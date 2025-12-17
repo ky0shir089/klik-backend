@@ -77,7 +77,7 @@ class AuctionResult extends Command
                                 'police_number' => $unit['nopol'],
                                 'chassis_number' => $unit['noka'],
                                 'engine_number' => $unit['nosin'],
-                                'price' => $unit['harga'],
+                                'price' => $unit['harga'] - $unit['potongan_tiket'],
                                 'admin_fee' => $unit['biaya_admin'],
                                 'final_price' => $unit['harga_total'],
                                 'created_by' => 1,
