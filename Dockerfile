@@ -50,16 +50,18 @@ COPY --from=vendor /app/vendor ./vendor
 
 # 3. PENTING: Set permissions agar worker FrankenPHP bisa menulis logs/cache
 # Tanpa ini, worker akan crash dan muncul error "too many consecutive worker failures"
-RUN chown -R www-data:www-data /app/storage /app/bootstrap/cache
+RUN chown -R www-data:www-data /app
+
+USER www-data
 
 # 4. Jalankan optimasi Laravel
 RUN php artisan optimize
 
+RUN php artisan octane:install --server=frankenphp
+
 # 5. Set Environment Variables untuk Octane
 ENV OCTANE_SERVER=frankenphp
 ENV SERVER_NAME=:8000
-
-USER www-data
 
 EXPOSE 8000
 
