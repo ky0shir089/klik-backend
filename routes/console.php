@@ -10,7 +10,7 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command(AuctionResult::class)
-    ->everyMinute()
+    ->daily()
     ->withoutOverlapping()
     ->runInBackground()
     ->sendOutputTo(storage_path('logs/auction-result.log'));

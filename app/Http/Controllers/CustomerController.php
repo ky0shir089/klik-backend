@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Http\Requests\CustomerRequest;
 use App\Http\Resources\DeleteResource;
 use App\Http\Resources\GetResource;
-use App\Http\Resources\StoreResource;
 use App\Http\Resources\UpdateResource;
 use App\Models\Customer;
 use Illuminate\Http\Request;
@@ -25,8 +24,11 @@ class CustomerController extends Controller
         }
 
         $query = Customer::select("klik_bidder_id", "name", "va_number")
-            ->withCount("auctions")
-            ->withCount("rvs")
+            ->withCount([
+                "units as units_count" => function ($query) {
+                    $query->where("payment_status", "UNPAID");
+                }
+            ])
             ->withSum("units", "price")
             ->withSum("units", "admin_fee")
             ->withSum("units", "final_price")
@@ -73,13 +75,15 @@ class CustomerController extends Controller
                 $query->where("payment_status", "UNPAID")
                     ->oldest("id");
             },
-            "units.auction",
+            "units.auction" => function ($query) {
+                $query->oldest("auction_date");
+            },
             "units.transactions",
             "rvs" => function ($query) {
                 $query->select("customer_id", "id", "rv_no", "date", "description", "ending_balance")
                     ->where("ending_balance", ">", 0)
                     ->where("status", "NEW")
-                    ->oldest("id");
+                    ->oldest("date");
             },
         ]));
     }

@@ -3,8 +3,8 @@
 namespace App\Console\Commands;
 
 use App\Models\Auction;
-use App\Models\AuctionCustomer;
 use App\Models\Customer;
+use App\Models\Transaction;
 use App\Models\Unit;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -34,8 +34,8 @@ class AuctionResult extends Command
         $response = Http::withHeaders([
             'Authorization' => 'Bearer ' . config('services.klik')['token'],
         ])->get('https://api.kliklelang.co.id/api/report/v3/hasil_lelang', [
-            'date_start' => "2025-12-06",
-            'date_end' => "2025-12-07",
+            'date_start' => now()->subDay()->format("Y-m-d"),
+            'date_end' => now()->subDay()->format("Y-m-d"),
         ]);
 
         $results = $response["data"] ?? [];
@@ -83,6 +83,19 @@ class AuctionResult extends Command
                                 'created_by' => 1,
                                 'created_at' => now(),
                             ];
+
+                            if (isset($customer['transaksi'])) {
+                                foreach ($customer['transaksi'] as $transaction) {
+                                    $transactions[] = [
+                                        'unit_id' => $unit['id_unit'],
+                                        'date' => $transaction['tanggal_upload'],
+                                        'receipt_link' => $transaction['url'],
+                                        'created_by' => 1,
+                                        'created_at' => now(),
+                                        'updated_at' => null
+                                    ];
+                                }
+                            }
                         }
                     }
                 }
@@ -90,6 +103,7 @@ class AuctionResult extends Command
                 Customer::upsert($customers, ["klik_bidder_id"]);
                 Auction::insert($auctions);
                 Unit::insert($units);
+                Transaction::insert($transactions);
             }
         });
     }
