@@ -104,5 +104,7 @@ jobs:
               --name siskeu-klik-back \
               --env-file "$ENV_FILE" \
               -p 8000:8000 \
+              -v /opt/apps/siskeu-be/file-sistem-keuangan/:/app/public/storage/file-upload \
               "$IMAGE"
+            docker exec -u root siskeu-klik-back chown -R www-data:www-data /app/public/storage/file-upload
             echo "Deployment finished. Running image: $IMAGE"
