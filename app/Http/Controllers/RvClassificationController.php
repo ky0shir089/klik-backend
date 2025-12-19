@@ -10,6 +10,7 @@ use App\Models\RvClassification;
 use App\Models\Unit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 use function Laravel\Prompts\info;
 
@@ -214,8 +215,11 @@ class RvClassificationController extends Controller
         $authId = auth()->id();
 
         $totalAmount = $units->sum("final_price");
+        $totalAdminFee = $units->sum("admin_fee");
         $totalRv = $rvs->sum("ending_balance");
         $amountNeeded = 0;
+        $diffBalance = 0;
+        $adminBalance = 0;
 
         if ($totalRv < $totalAmount) {
             return response()->json([
@@ -224,7 +228,7 @@ class RvClassificationController extends Controller
             ], 400);
         }
 
-        DB::transaction(function () use ($units, $rvs, $authId, $amountNeeded) {
+        DB::transaction(function () use ($units, $rvs, $authId, $totalAdminFee, &$amountNeeded, &$diffBalance, &$adminBalance) {
             foreach ($units as $unit) {
                 $amountNeeded += $unit->price;
                 foreach ($rvs as $rv) {
@@ -249,12 +253,14 @@ class RvClassificationController extends Controller
                         "created_at" => now(),
                     ];
 
-                    $rv->admin_fee = $rv->admin_fee + $unit->admin_fee;
-                    $balance  = $rv->starting_balance - $rv->used_balance - $rv->admin_fee;
-                    if ($balance < 0) {
-                        $rv->used_balance -= $balance;
+                    $rv->admin_fee = $totalAdminFee == $adminBalance ? 0 : $rv->admin_fee + $unit->admin_fee;
+                    $diffBalance = $rv->starting_balance - $rv->used_balance - $rv->admin_fee;
+                    if ($diffBalance < 0) {
+                        $rv->used_balance += $diffBalance;
+                        $amountNeeded -= $diffBalance;
                     }
                     $rv->ending_balance = $rv->starting_balance - $rv->used_balance - $rv->admin_fee;
+                    $adminBalance += $unit->admin_fee;
 
                     if ($amountNeeded <= 0) {
                         break;
