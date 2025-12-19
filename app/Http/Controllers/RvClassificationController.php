@@ -250,10 +250,13 @@ class RvClassificationController extends Controller
                     ];
 
                     $rv->admin_fee = $rv->admin_fee + $unit->admin_fee;
+                    $balance  = $rv->starting_balance - $rv->used_balance - $rv->admin_fee;
+                    if ($balance < 0) {
+                        $rv->used_balance -= $balance;
+                    }
                     $rv->ending_balance = $rv->starting_balance - $rv->used_balance - $rv->admin_fee;
 
                     if ($amountNeeded <= 0) {
-                        info("break");
                         break;
                     }
                 }
@@ -299,11 +302,13 @@ class RvClassificationController extends Controller
                     })
                     ->oldest("id");
             },
-            "units.auction",
+            "units.auction" => function ($query) {
+                $query->oldest("auction_date");
+            },
             "rvs" => function ($query) {
                 $query->select("customer_id", "id", "rv_no", "date", "description", "starting_balance")
                     ->where("status", "!=", "NEW")
-                    ->oldest("id");
+                    ->oldest("date");
             },
         ]));
     }
