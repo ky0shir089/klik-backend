@@ -50,4 +50,4 @@ COPY . .
 COPY --from=vendor /app/vendor ./vendor
 
 EXPOSE 8000
-ENTRYPOINT sh -c "php artisan optimize && php artisan schedule:work && php artisan octane:frankenphp --host=0.0.0.0 --port=8000"
+ENTRYPOINT sh -c "php artisan optimize && php artisan octane:frankenphp --host=0.0.0.0 --port=8000"
