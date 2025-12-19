@@ -227,7 +227,7 @@ class RvClassificationController extends Controller
         DB::transaction(function () use ($units, $rvs, $authId, $amountNeeded) {
             foreach ($units as $unit) {
                 $amountNeeded += $unit->price;
-                foreach ($rvs as $index => $rv) {
+                foreach ($rvs as $rv) {
                     if ($rv->ending_balance <= 0) continue;
                     if ($amountNeeded >= $rv->ending_balance) {
                         $rv->used_balance += $rv->ending_balance;

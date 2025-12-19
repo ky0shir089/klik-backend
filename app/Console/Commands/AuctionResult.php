@@ -101,8 +101,8 @@ class AuctionResult extends Command
                 }
 
                 Customer::upsert($customers, ["klik_bidder_id"]);
-                Auction::insert($auctions);
-                Unit::insert($units);
+                Auction::upsert($auctions, ["customer_id", "klik_auction_id"]);
+                Unit::upsert($units, ["klik_unit_id"]);
                 Transaction::insert($transactions);
             }
         });
