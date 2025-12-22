@@ -99,6 +99,13 @@ jobs:
               docker rm siskeu-klik-back || true
             fi
             # run new container with server-side .env
+            # ensure laravel storage structure exists on host
+            mkdir -p /opt/apps/siskeu-be/storage/{app,logs,framework}
+            mkdir -p /opt/apps/siskeu-be/storage/framework/{cache,sessions,views}
+            
+            # fix permission on host
+            chown -R www-data:www-data /opt/apps/siskeu-be/storage
+            chmod -R 775 /opt/apps/siskeu-be/storage
             docker run -d \
               --restart unless-stopped \
               --name siskeu-klik-back \
@@ -107,5 +114,7 @@ jobs:
               -v /opt/apps/siskeu-be/file-sistem-keuangan/:/app/public \
               -v /opt/apps/siskeu-be/storage:/app/storage \
               "$IMAGE"
+            # clear laravel caches (safe for prod)
+            docker exec siskeu-klik-back php artisan optimize:clear || true
             docker exec -u root siskeu-klik-back chown -R www-data:www-data /app/public /app/storage
             echo "Deployment finished. Running image: $IMAGE"
