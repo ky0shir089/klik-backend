@@ -33,11 +33,6 @@ class RvController extends Controller
 
         $query = RV::query()
             ->with(["type_trx", "account", "account.bank"])
-            ->withSum([
-                "used_rv" => function ($query) {
-                    $query->where("status", "!=", "PAID");
-                }
-            ], "total_amount")
             ->when($request->search, function ($query, $search) {
                 $query->whereAny([
                     "rv_no",

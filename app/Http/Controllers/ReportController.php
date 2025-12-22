@@ -6,22 +6,21 @@ use App\Models\RV;
 use App\Models\Unit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Number;
 use Illuminate\Support\Str;
 use Rap2hpoutre\FastExcel\FastExcel;
 
 class ReportController extends Controller
 {
+    private function resultsGenerator($results)
+    {
+        foreach ($results as $result) {
+            yield $result;
+        }
+    }
+
     private function generateExcelReport($results, $columns, $filename)
     {
-        function resultsGenerator($results)
-        {
-            foreach ($results as $result) {
-                yield $result;
-            }
-        }
-
-        (new FastExcel(resultsGenerator($results)))->configureOptionsUsing(function ($writer) {
+        (new FastExcel($this->resultsGenerator($results)))->configureOptionsUsing(function ($writer) {
             $writer->DEFAULT_COLUMN_WIDTH = 18;
         })->export(storage_path('app/public/' . $filename), function ($row) use ($columns) {
             return $columns($row);
@@ -56,7 +55,7 @@ class ReportController extends Controller
 
         $this->generateExcelReport($data, $columns, $id);
 
-        return $id;
+        return response()->download(storage_path('app/public/' . $id), "rv-report.xlsx");
     }
 
     public function reportAuction(Request $request)
@@ -121,6 +120,6 @@ class ReportController extends Controller
 
         $this->generateExcelReport($data, $columns, $id);
 
-        return $id;
+        return response()->download(storage_path('app/public/' . $id), "auction-report.xlsx");
     }
 }
