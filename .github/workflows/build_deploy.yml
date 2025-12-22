@@ -106,5 +106,5 @@ jobs:
               -p 8000:8000 \
               -v /opt/apps/siskeu-be/file-sistem-keuangan/:/app/public \
               "$IMAGE"
-            docker exec -u root siskeu-klik-back chown -R www-data:www-data /app/public/storage/file-uploads
+            docker exec -u root siskeu-klik-back chown -R www-data:www-data /app/public
             echo "Deployment finished. Running image: $IMAGE"
