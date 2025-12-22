@@ -76,31 +76,46 @@ class ReportController extends Controller
             ->with([
                 "auction",
                 "auction.customer",
-                "spp"
+                "spp",
+                "classifications:unit_id,rv_id",
+                "classifications.rv:id,rv_no,date,starting_balance",
             ])
             ->whereRelation("auction", "auction_date", [$from, $to])
             ->get();
 
         $columns = function ($row) {
+            $rvNo = [];
+            $rvDate = [];
+            $rvAmount = [];
+
+            foreach ($row->classifications as $classification) {
+                $rvNo[] = $classification->rv->rv_no;
+                $rvDate[] = $classification->rv->date;
+                $rvAmount[] = $classification->rv->starting_balance;
+            }
+
             return [
                 'Tgl Lelang' => $row->auction->auction_date->format("Y-m-d"),
                 'Nopol' => $row->police_number,
                 'Noka' => $row->chassis_number,
                 'Nosin' => $row->engine_number,
-                'Nomor Paket' => $row->package_number,
-                'Nomor Kontrak' => $row->contract_number,
                 'Status Transaksi' => $row->payment_status,
                 'Status SPP' => $row->spp_status,
                 'Harga Terbentuk' => $row->price,
                 'Harga Admin' => $row->admin_fee,
                 'Harga Total' => $row->final_price,
-                'Harga Distribusi' => $row->distributed_price,
-                'Selisih' => $row->diff_price,
                 'Bidder' => $row->auction->customer->name,
                 'KTP' => $row->auction->customer->ktp,
                 'VA Number' => $row->auction->customer->va_number,
                 'Balai Lelang' => $row->auction->branch_name,
+                'No RV' => collect($rvNo)->join(", "),
+                'Tgl RV' => collect($rvDate)->join(", "),
+                'Nominal RV' => collect($rvAmount)->join(", "),
                 'Tgl Spp' => $row->spp?->created_at?->format("Y-m-d"),
+                'Harga Distribusi' => $row->distributed_price,
+                'Selisih' => $row->diff_price,
+                'Nomor Paket' => $row->package_number,
+                'Nomor Kontrak' => $row->contract_number,
             ];
         };
 

@@ -58,4 +58,9 @@ class Unit extends Model
     {
         return $this->hasMany(Transaction::class, 'unit_id', 'klik_unit_id');
     }
+
+    public function classifications(): HasMany
+    {
+        return $this->hasMany(RvClassification::class, 'unit_id', 'id');
+    }
 }
