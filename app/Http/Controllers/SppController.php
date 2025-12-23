@@ -50,13 +50,13 @@ class SppController extends Controller
         DB::beginTransaction();
 
         try {
-            $units = Unit::select("id", "price", "auction_id")
+            $units = Unit::select("id", "price", "ticket_price", "auction_id")
                 ->with("auction")
                 ->whereIn("id", $request->units)
                 ->get();
 
             $totalUnit = $units->count();
-            $totalAmount = $units->sum("price");
+            $totalAmount = $units->sum("price") + $units->sum("ticket_price");
             $authId = auth()->id();
 
             $spp = new Spp;

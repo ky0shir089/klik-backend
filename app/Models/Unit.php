@@ -21,6 +21,7 @@ class Unit extends Model
         'contract_number',
         'packge_number',
         'price',
+        'ticket_price',
         'admin_fee',
         'final_price',
         'distributed_price',

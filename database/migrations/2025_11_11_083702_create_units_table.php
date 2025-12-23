@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string("chassis_number");
             $table->string("engine_number");
             $table->unsignedBigInteger("price");
+            $table->unsignedBigInteger("ticket_price");
             $table->unsignedBigInteger("admin_fee");
             $table->unsignedBigInteger("final_price");
             $table->string("payment_status")->default("UNPAID");
