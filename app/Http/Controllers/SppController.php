@@ -30,6 +30,10 @@ class SppController extends Controller
                 "customer:klik_bidder_id,name",
             ])
             ->where("status", "NEW")
+            ->when($request->search, function ($query, $search) {
+                $query->whereRelation("customer", "name", "ilike", "%$search%")
+                    ->orWhere("branch_name", "ilike", "%$search%");
+            })
             ->paginate($request->size);
 
         return new GetResource($query);
