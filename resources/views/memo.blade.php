@@ -71,7 +71,7 @@
                                 <td class="p-1 text-xs border-black">{{ $branch }}</td>
                                 <td class="p-1 text-xs text-center border-black">{{ $unit->count() }}</td>
                                 <td class="p-1 text-xs text-right border-black">
-                                    {{ Number::format($unit->sum('price')) }}
+                                    {{ Number::format($unit->sum('price') + $unit->sum('ticket_price')) }}
                                 </td>
                                 <td class="p-1 text-xs border-black">
                                     PELUNASAN FIF_KLIK EVENT
