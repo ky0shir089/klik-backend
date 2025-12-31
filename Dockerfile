@@ -49,5 +49,7 @@ WORKDIR /app
 COPY . .
 COPY --from=vendor /app/vendor ./vendor
 
+RUN echo "* * * * * cd /app && php artisan schedule:run >> /dev/null 2>&1" >> /etc/crontabs/root
+
 EXPOSE 8000
-ENTRYPOINT sh -c "php artisan optimize && php artisan octane:frankenphp --host=0.0.0.0 --port=8000"
+ENTRYPOINT sh -c "crond && php artisan optimize && php artisan octane:frankenphp --host=0.0.0.0 --port=8000"
