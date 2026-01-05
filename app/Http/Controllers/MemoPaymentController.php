@@ -36,12 +36,19 @@ class MemoPaymentController extends Controller
             }
         }
 
-        $groups = collect($units)->groupBy([
-            function ($item) {
-                return $item->auction->auction_date->format('d M y');
-            },
-            'auction.branch_name'
-        ]);
+        $groups = collect($units)
+            ->sortBy(function ($item) {
+                return [
+                    $item->auction->branch_name,
+                    $item->auction->auction_date,
+                ];
+            })
+            ->groupBy([
+                'auction.branch_name',
+                function ($item) {
+                    return $item->auction->auction_date->format('d M y');
+                },
+            ]);
 
         $data = [
             'spp_no' => $payment->spp_no,

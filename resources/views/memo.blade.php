@@ -64,8 +64,8 @@
 
                 <tbody>
                     @php($index = 1)
-                    @foreach ($groups as $date => $branches)
-                        @foreach ($branches as $branch => $unit)
+                    @foreach ($groups as $branch => $branches)
+                        @foreach ($branches as $date => $unit)
                             <tr>
                                 <td class="p-1 text-xs border-black">{{ $index++ }}</td>
                                 <td class="p-1 text-xs border-black">{{ $branch }}</td>
@@ -93,6 +93,7 @@
                         </th>
                         <th class="p-1 text-xs border-black"></th>
                     </tr>
+                </tfoot>
             </table>
 
             <br />
