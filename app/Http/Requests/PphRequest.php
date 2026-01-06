@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class PvRequest extends FormRequest
+class PphRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -22,11 +22,11 @@ class PvRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'paid_date' => ['required', 'date'],
-            'description' => ['required', 'string'],
-            'payment_method' => ['required', 'string'],
-            'bank_account_id' => ['required', 'integer', 'exists:bank_accounts,id'],
-            'pvs' => ['required', 'array', 'min:1'],
+            'name' => ['required', 'string'],
+            'rate' => ['required', 'numeric'],
+            'coa_id' => ['required', 'numeric', 'exists:chart_of_accounts,id'],
+            'created_by' => ['numeric', 'exists:users,id'],
+            'updated_by' => ['nullable', 'numeric', 'exists:users,id'],
         ];
     }
 }

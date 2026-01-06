@@ -13,6 +13,7 @@ use App\Http\Controllers\MenuController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PaymentVoucherController;
+use App\Http\Controllers\PphController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\RvClassificationController;
@@ -70,6 +71,7 @@ Route::middleware('auth:sanctum')
                         Route::resource('trx-dtl', TrxDetailController::class);
                         Route::resource('bank', BankController::class);
                         Route::resource('bank-account', bankAccountController::class);
+                        Route::resource('pph', PphController::class);
                     });
             });
 
@@ -83,6 +85,7 @@ Route::middleware('auth:sanctum')
                         Route::resource('invoice', InvoiceController::class);
                         Route::resource('supplier', SupplierController::class);
                         Route::resource('rv-classification', RvClassificationController::class);
+                        Route::get('invoice-inbox', [InvoiceController::class, 'inbox']);
                     });
 
                 Route::prefix('v2')

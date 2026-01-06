@@ -83,7 +83,7 @@ class RvController extends Controller
 
             $debit = [
                 ...$gl,
-                "coa_id" => $sql->account->coa->id,
+                "coa_id" => $request->pay_method == "BANK" ? $sql->account->coa->id : 149,
                 "debit" => $request->starting_balance,
                 "credit" => 0,
             ];

@@ -13,6 +13,7 @@ class PaymentVoucher extends Model
     protected $fillable = [
         'pv_no',
         'description',
+        'payment_method',
         'bank_account_id',
         'supplier_id',
         'supplier_account_id',

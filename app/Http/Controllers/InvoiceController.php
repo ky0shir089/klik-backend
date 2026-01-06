@@ -39,7 +39,36 @@ class InvoiceController extends Controller
                     "amount",
                 ], "ilike", "%$search%");
             })
-            ->orderBy("id", "desc")
+            ->oldest()
+            ->paginate($request->size);
+
+        return new GetResource($query);
+    }
+
+    public function inbox(Request $request)
+    {
+        if (!auth()->user()->tokenCan("invoice:browse")) {
+            return response()->json([
+                "success" => false,
+                "message" => "Unauthorized",
+            ], 403);
+        }
+
+        $query = Invoice::query()
+            ->with([
+                "supplier_account",
+                "supplier_account.supplier",
+                "supplier_account.bank",
+            ])
+            ->where("status", "REQUEST")
+            ->when($request->search, function ($query, $search) {
+                $query->whereAny([
+                    "invoice_no",
+                    "description",
+                    "amount",
+                ], "ilike", "%$search%");
+            })
+            ->latest()
             ->paginate($request->size);
 
         return new GetResource($query);
@@ -108,6 +137,7 @@ class InvoiceController extends Controller
         try {
             $invoice->update([
                 'status' => $request->status,
+                "signature" => $request->signature,
                 'updated_by' => auth()->id(),
             ]);
 
@@ -120,6 +150,10 @@ class InvoiceController extends Controller
                     "trx_dtl_id" => $invoice->trx_dtl->trx_id,
                     "created_by" => auth()->id(),
                 ]);
+            }
+
+            if ($request->status == "CANCEL") {
+                $invoice->pv()->delete();
             }
 
             DB::commit();

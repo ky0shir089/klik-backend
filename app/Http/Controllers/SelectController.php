@@ -8,6 +8,7 @@ use App\Models\Bank;
 use App\Models\BankAccount;
 use App\Models\ChartOfAccount;
 use App\Models\Customer;
+use App\Models\Invoice;
 use App\Models\Menu;
 use App\Models\Module;
 use App\Models\PaymentVoucher;
@@ -61,7 +62,7 @@ class SelectController extends Controller
             ->when($request->type == "CHILDREN", function ($query) {
                 $query->whereNotNull("parent_id");
             })
-            ->orderBy("id", "asc")
+            ->orderBy("code", "asc")
             ->get();
 
         return new GetResource($query);

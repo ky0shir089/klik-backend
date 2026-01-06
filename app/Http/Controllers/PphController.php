@@ -2,37 +2,34 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\BankAccountRequest;
+use App\Http\Requests\PphRequest;
 use App\Http\Resources\DeleteResource;
 use App\Http\Resources\GetResource;
 use App\Http\Resources\StoreResource;
 use App\Http\Resources\UpdateResource;
-use App\Models\BankAccount;
+use App\Models\Pph;
 use Illuminate\Http\Request;
 
-class BankAccountController extends Controller
+class PphController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
     {
-        if (!auth()->user()->tokenCan("bank-account:browse")) {
+        if (!auth()->user()->tokenCan("pph:browse")) {
             return response()->json([
                 "success" => false,
                 "message" => "Unauthorized",
             ], 403);
         }
 
-        $query = BankAccount::query()
-            ->with([
-                "bank:id,name",
-                "coa:id,code"
-            ])
+        $query = Pph::query()
+            ->with("coa")
             ->when($request->search, function ($query, $search) {
-                $query->where("name", "ilike", "%$search%");
+                $query->where("name", "ilike", "$search%");
             })
-            ->orderBy("id", "asc")
+            ->oldest()
             ->paginate($request->size);
 
         return new GetResource($query);
@@ -41,16 +38,16 @@ class BankAccountController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(BankAccountRequest $request)
+    public function store(PphRequest $request)
     {
-        if (!auth()->user()->tokenCan("bank-account:add")) {
+        if (!auth()->user()->tokenCan("pph:add")) {
             return response()->json([
                 "success" => false,
                 "message" => "Unauthorized",
             ], 403);
         }
 
-        $sql = BankAccount::create($request->validated() + [
+        $sql = Pph::create($request->validated() + [
             'created_by' => auth()->id(),
             'updated_at' => null,
         ]);
@@ -61,51 +58,51 @@ class BankAccountController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(BankAccount $bankAccount)
+    public function show(Pph $pph)
     {
-        if (!auth()->user()->tokenCan("bank-account:read")) {
+        if (!auth()->user()->tokenCan("pph:read")) {
             return response()->json([
                 "success" => false,
                 "message" => "Unauthorized",
             ], 403);
         }
 
-        return new GetResource($bankAccount);
+        return new GetResource($pph);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(BankAccountRequest $request, BankAccount $bankAccount)
+    public function update(PphRequest $request, Pph $pph)
     {
-        if (!auth()->user()->tokenCan("bank-account:edit")) {
+        if (!auth()->user()->tokenCan("pph:edit")) {
             return response()->json([
                 "success" => false,
                 "message" => "Unauthorized",
             ], 403);
         }
 
-        $bankAccount->update($request->validated() + [
+        $pph->update($request->validated() + [
             'updated_by' => auth()->id(),
         ]);
 
-        return new UpdateResource($bankAccount);
+        return new UpdateResource($pph);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(BankAccount $bankAccount)
+    public function destroy(Pph $pph)
     {
-        if (!auth()->user()->tokenCan("bank-account:delete")) {
+        if (!auth()->user()->tokenCan("pph:delete")) {
             return response()->json([
                 "success" => false,
                 "message" => "Unauthorized",
             ], 403);
         }
 
-        $bankAccount->delete();
+        $pph->delete();
 
-        return new DeleteResource($bankAccount);
+        return new DeleteResource($pph);
     }
 }

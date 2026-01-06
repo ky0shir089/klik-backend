@@ -16,6 +16,7 @@ class Invoice extends Model
         'rv_id',
         'supplier_account_id',
         'status',
+        'signature',
         'description',
         'amount',
         'inv_coa_id',

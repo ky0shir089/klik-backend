@@ -75,6 +75,7 @@ class PaymentVoucherController extends Controller
             }
             $pvNo = 'PV' . $currentYear . Str::padLeft($countPv++, 5, '0');
 
+            $trxs = [];
             $total_amount = 0;
             $trx_coa_id = 0;
             $bank_coa_id = 0;
@@ -82,49 +83,34 @@ class PaymentVoucherController extends Controller
 
             foreach ($request->pvs as $payment) {
                 $pv = PaymentVoucher::find($payment);
-                // $pv_amount = $pv->pv_amount;
 
+                $trxs[] = $pv->trx_dtl_id;
 
-                // if ($pv->trx_dtl_id == 2) {
-                //     $rvs = $pv->processable->rvs;
+                if ($pv->trx_dtl_id == 2) {
+                    $pv->pv_no = $pvNo;
+                    $pv->description = $request->description;
+                    $pv->bank_account_id = $request->bank_account_id;
+                    $pv->status = "PAID";
+                    $pv->paid_date = now();
+                    $pv->updated_by = $authId;
+                    $pv->save();
 
-                //     foreach ($rvs as $rv) {
-                //         if ($pv_amount > 0) {
-                //             $ending_balance = $rv->rv->ending_balance;
-                //             $starting_balance = $rv->rv->starting_balance;
+                    $total_amount += $pv->pv_amount;
+                    $trx_coa_id = $pv->trx_dtl->trx->id;
+                    $bank_coa_id = $pv->bank_account->coa_id;
 
-                //             $used_balance = $ending_balance >= $pv_amount ? $pv_amount : $starting_balance;
-                //             $ending_balance = $ending_balance - $used_balance;
+                    $pv->processable()->update([
+                        "status" => "PAID",
+                        "updated_by" => $authId,
+                    ]);
+                }
+            }
 
-                //             $pv_amount = $pv_amount - $used_balance;
-
-                //             $rv->rv()->update([
-                //                 "used_balance" => $used_balance,
-                //                 "ending_balance" => $ending_balance,
-                //                 "status" => $ending_balance == 0 ? "CLOSED" : "NEW",
-                //                 "customer_id" => $ending_balance == 0 ? $rv->rv->customer_id : NULL,
-                //                 "updated_by" => $authId,
-                //             ]);
-                //         }
-                //     }
-                // }
-
-                $pv->pv_no = $pvNo;
-                $pv->description = $request->description;
-                $pv->bank_account_id = $request->bank_account_id;
-                $pv->status = "PAID";
-                $pv->paid_date = now();
-                $pv->updated_by = $authId;
-                $pv->save();
-
-                $total_amount += $pv->pv_amount;
-                $trx_coa_id = $pv->trx_dtl->trx->id;
-                $bank_coa_id = $pv->bank_account->coa_id;
-
-                $pv->processable()->update([
-                    "status" => "PAID",
-                    "updated_by" => $authId,
-                ]);
+            if (collect($trxs)->unique()->count() > 1) {
+                return response()->json([
+                    "success" => false,
+                    "message" => "Transaction must be the same",
+                ], 400);
             }
 
             $gl = [
@@ -145,7 +131,7 @@ class PaymentVoucherController extends Controller
 
             $credit = [
                 ...$gl,
-                "coa_id" => $bank_coa_id,
+                "coa_id" => $request->payment_method == "BANK" ? $bank_coa_id : 149,
                 "debit" => 0,
                 "credit" => $total_amount,
             ];

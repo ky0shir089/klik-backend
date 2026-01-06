@@ -16,7 +16,7 @@ return new class extends Migration
             $table->date("payment_date");
             $table->string("spp_no");
             $table->unsignedInteger("total_unit");
-            $table->unsignedInteger("total_amount");
+            $table->unsignedBigInteger("total_amount");
             $table->string("status")->default('NEW');
             $table->foreignId("created_by")->constrained("users")->cascadeOnDelete();
             $table->foreignId("updated_by")->nullable()->constrained("users")->cascadeOnDelete();

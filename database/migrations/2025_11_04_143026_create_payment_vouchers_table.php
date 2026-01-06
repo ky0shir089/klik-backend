@@ -20,7 +20,7 @@ return new class extends Migration
             $table->foreignId("supplier_id")->constrained("suppliers")->cascadeOnDelete();
             $table->foreignId("supplier_account_id")->constrained("supplier_accounts")->cascadeOnDelete();
             $table->morphs("processable");
-            $table->unsignedInteger("pv_amount");
+            $table->unsignedBigInteger("pv_amount");
             $table->string("status")->default("NEW");
             $table->date("paid_date")->nullable();
             $table->foreignId("trx_dtl_id")->constrained("type_trxes")->cascadeOnDelete();

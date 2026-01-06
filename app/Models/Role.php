@@ -31,11 +31,11 @@ class Role extends Model
 
     public function permissions(): BelongsToMany
     {
-        return $this->BelongsToMany(Permission::class, "permission_role", "role_id", "permission_id");
+        return $this->belongsToMany(Permission::class, "permission_role", "role_id", "permission_id");
     }
 
     public function menus(): BelongsToMany
     {
-        return $this->BelongsToMany(Menu::class, "menu_role", "role_id", "menu_id");
+        return $this->belongsToMany(Menu::class, "menu_role", "role_id", "menu_id");
     }
 }

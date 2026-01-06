@@ -84,7 +84,7 @@ class UploadSppController extends Controller
                             $unit->contract_number = $item["contract_number"];
                             $unit->package_number = $item["package_number"];
                             $unit->distributed_price = $item["distributed_price"];
-                            $unit->diff_price = $item["distributed_price"] - $unit->price;
+                            $unit->diff_price = $item["distributed_price"] - $unit->price + $unit->ticket_price;
                             $unit->spp_status = "UPLOADED";
                             $unit->updated_by =  $authId;
                             $unit->updated_at = now();

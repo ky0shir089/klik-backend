@@ -15,6 +15,7 @@ class RV extends Model
         'date',
         'type_trx_id',
         'description',
+        'pay_method',
         'bank_account_id',
         'coa_id',
         'starting_balance',
