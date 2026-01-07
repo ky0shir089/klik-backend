@@ -39,6 +39,7 @@ class RvController extends Controller
                     "date",
                     "description",
                     "starting_balance",
+                    "journal_number"
                 ], "ilike", "%$search%");
             })
             ->orderBy("id", "desc")

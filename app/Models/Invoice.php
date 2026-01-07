@@ -12,14 +12,16 @@ class Invoice extends Model
     protected $table = 'invoices';
 
     protected $fillable = [
+        'date',
         'invoice_no',
-        'rv_id',
+        'trx_id',
+        'supplier_id',
+        'payment_method',
         'supplier_account_id',
+        'description',
+        'file_upload_id',
         'status',
         'signature',
-        'description',
-        'amount',
-        'inv_coa_id',
         'pv_id',
         'created_by',
         'updated_by',
@@ -29,6 +31,7 @@ class Invoice extends Model
     protected $hidden = [
         'created_by',
         'updated_by',
+        'created_at',
         'updated_at',
     ];
 

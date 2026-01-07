@@ -12,6 +12,7 @@ use App\Models\Invoice;
 use App\Models\Menu;
 use App\Models\Module;
 use App\Models\PaymentVoucher;
+use App\Models\Pph;
 use App\Models\Role;
 use App\Models\RV;
 use App\Models\Spp;
@@ -165,6 +166,15 @@ class SelectController extends Controller
             ->with(["account", "account.bank"])
             ->where("is_active", true)
             ->orderBy("name", "asc")
+            ->get();
+
+        return new GetResource($query);
+    }
+
+    public function pph()
+    {
+        $query = Pph::query()
+            ->oldest("name")
             ->get();
 
         return new GetResource($query);

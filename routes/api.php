@@ -124,6 +124,7 @@ Route::middleware('auth:sanctum')
                         Route::get('unpaid-bidder', [SelectController::class, 'unpaidBidder']);
                         Route::get('unpaid-payment', [SelectController::class, 'unpaidPayment']);
                         Route::get('supplier', [SelectController::class, 'supplier']);
+                        Route::get('pph', [SelectController::class, 'pph']);
                     });
             });
 
@@ -133,6 +134,7 @@ Route::middleware('auth:sanctum')
                     ->group(function () {
                         Route::get('report-rv', [ReportController::class, 'reportRv']);
                         Route::post('report-auction', [ReportController::class, 'reportAuction']);
+                        Route::post('report-bank', [ReportController::class, 'reportBank']);
                     });
             });
     });

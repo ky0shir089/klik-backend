@@ -34,7 +34,11 @@ class SppController extends Controller
                 $query->whereRelation("customer", "name", "ilike", "%$search%")
                     ->orWhere("branch_name", "ilike", "%$search%");
             })
-            ->paginate($request->size);
+            ->when($request->size === -1, function ($query) {
+                return $query->oldest()->get();
+            }, function ($query) use ($request) {
+                return $query->oldest()->paginate($request->size);
+            });
 
         return new GetResource($query);
     }
