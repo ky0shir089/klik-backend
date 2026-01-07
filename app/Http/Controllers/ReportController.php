@@ -135,6 +135,12 @@ class ReportController extends Controller
             ], 403);
         }
 
+        $dirname = dirname(storage_path("app/public/reports/bank"));
+
+        if (!file_exists($dirname)) {
+            mkdir(dirname($dirname), 0755, true);
+        }
+
         $id = "reports/bank/" . Str::random(6) . ".xlsx";
         $from = Carbon::parse($request->from);
         $to = Carbon::parse($request->to);
