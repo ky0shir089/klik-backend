@@ -18,8 +18,8 @@ return new class extends Migration
             $table->string("type");
             $table->string("description");
             $table->foreignId("coa_id")->constrained("chart_of_accounts")->cascadeOnDelete();
-            $table->string("debit");
-            $table->string("credit");
+            $table->unsignedBigInteger("debit");
+            $table->unsignedBigInteger("credit");
             $table->foreignId("created_by")->constrained("users")->cascadeOnDelete();
             $table->foreignId("updated_by")->nullable()->constrained("users")->cascadeOnDelete();
             $table->timestamps();

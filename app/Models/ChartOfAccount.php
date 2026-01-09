@@ -36,4 +36,9 @@ class ChartOfAccount extends Model
     {
         return $this->hasMany(ChartOfAccount::class, 'parent_id', 'id')->with('children');
     }
+
+    public function gl(): HasMany
+    {
+        return $this->hasMany(GL::class, 'coa_id', 'id');
+    }
 }

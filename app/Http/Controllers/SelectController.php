@@ -179,4 +179,15 @@ class SelectController extends Controller
 
         return new GetResource($query);
     }
+
+    public function rv()
+    {
+        $query = RV::query()
+            ->where("ending_balance", ">", 0)
+            ->whereNull("customer_id")
+            ->oldest("id")
+            ->get();
+
+        return new GetResource($query);
+    }
 }

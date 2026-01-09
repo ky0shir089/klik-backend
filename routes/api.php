@@ -3,7 +3,7 @@
 use App\Http\Controllers\AuctionController;
 use App\Http\Controllers\AuctionCustomerController;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\bankAccountController;
+use App\Http\Controllers\BankAccountController;
 use App\Http\Controllers\BankController;
 use App\Http\Controllers\ChartOfAccountController;
 use App\Http\Controllers\CustomerController;
@@ -70,7 +70,7 @@ Route::middleware('auth:sanctum')
                         Route::resource('type-trx', TypeTrxController::class);
                         Route::resource('trx-dtl', TrxDetailController::class);
                         Route::resource('bank', BankController::class);
-                        Route::resource('bank-account', bankAccountController::class);
+                        Route::resource('bank-account', BankAccountController::class);
                         Route::resource('pph', PphController::class);
                     });
             });
@@ -125,6 +125,7 @@ Route::middleware('auth:sanctum')
                         Route::get('unpaid-payment', [SelectController::class, 'unpaidPayment']);
                         Route::get('supplier', [SelectController::class, 'supplier']);
                         Route::get('pph', [SelectController::class, 'pph']);
+                        Route::get('rv', [SelectController::class, 'rv']);
                     });
             });
 
@@ -135,6 +136,7 @@ Route::middleware('auth:sanctum')
                         Route::get('report-rv', [ReportController::class, 'reportRv']);
                         Route::post('report-auction', [ReportController::class, 'reportAuction']);
                         Route::post('report-bank', [ReportController::class, 'reportBank']);
+                        Route::post('report-gl', [ReportController::class, 'reportGl']);
                     });
             });
     });

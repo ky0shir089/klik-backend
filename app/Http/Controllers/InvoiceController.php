@@ -8,6 +8,8 @@ use App\Http\Resources\GetResource;
 use App\Http\Resources\StoreResource;
 use App\Http\Resources\UpdateResource;
 use App\Models\Invoice;
+use App\Models\InvoiceDetail;
+use App\Services\FileUploadService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -39,7 +41,7 @@ class InvoiceController extends Controller
                     "amount",
                 ], "ilike", "%$search%");
             })
-            ->oldest()
+            ->latest("id")
             ->paginate($request->size);
 
         return new GetResource($query);
@@ -86,14 +88,62 @@ class InvoiceController extends Controller
             ], 403);
         }
 
-        $year = date('y');
-        $invoice_no = 'INV' . $year . Str::padLeft(Invoice::count() + 1, 5, '0');
+        DB::beginTransaction();
 
-        $sql = Invoice::create($request->validated() + [
-            'invoice_no' => $invoice_no,
-            'created_by' => auth()->id(),
-            'updated_at' => null,
-        ]);
+        try {
+            $year = date('y');
+            $invoice_no = 'INV' . $year . Str::padLeft(Invoice::count() + 1, 5, '0');
+            $authId = auth()->id();
+
+            if ($request->hasFile('attachment')) {
+                $file = (new FileUploadService)->handleUpload($request->file('attachment'));
+            }
+
+            $sql = Invoice::create($request->validated() + [
+                'invoice_no' => $invoice_no,
+                'file_upload_id' => $file->id ?? null,
+                'created_by' => $authId,
+                'updated_at' => null,
+            ]);
+
+            $details = [];
+
+            foreach ($request->details as $detail) {
+                $totalAmount = $detail['item_amount'] - $detail['pph_amount'] + $detail['ppn_amount'];
+
+                $details[] = [
+                    'invoice_id' => $sql->id,
+                    'inv_coa_id' => $detail['inv_coa_id'],
+                    'description' => $detail['description'],
+                    'item_amount' => $detail['item_amount'],
+                    'pph_id' => isset($detail['pph_id']) ? $detail['pph_id'] : null,
+                    'pph_amount' => $detail['pph_amount'],
+                    'ppn_rate' => $detail['ppn_rate'],
+                    'ppn_amount' => $detail['ppn_amount'],
+                    'rv_id' => isset($detail['rv_id']) ? $detail['rv_id'] : null,
+                    'total_amount' => $totalAmount,
+                    'created_by' => $authId,
+                    'created_at' => now(),
+                    'updated_at' => null,
+                ];
+            }
+
+            $sql->total_amount = collect($details)->sum("total_amount");
+            $sql->save();
+
+            InvoiceDetail::insert($details);
+
+            DB::commit();
+        } catch (\Throwable $th) {
+            info($th->getMessage());
+
+            DB::rollBack();
+
+            return response()->json([
+                "success" => false,
+                "message" => $th->getMessage(),
+            ], 500);
+        }
 
         return new StoreResource($sql);
     }
@@ -116,7 +166,10 @@ class InvoiceController extends Controller
             "supplier_account",
             "supplier_account.supplier",
             "supplier_account.bank",
-            "coa",
+            "attachment",
+            "details",
+            "details.coa",
+            "details.pph",
         ]));
     }
 
@@ -144,10 +197,10 @@ class InvoiceController extends Controller
             if ($request->status == "APPROVE") {
                 $invoice->pv()->create([
                     "supplier_id" => $invoice->supplier_account->supplier->id,
-                    "supplier_account_id" => $invoice->supplier_account_id,
-                    "pv_amount" => $invoice->amount,
+                    "supplier_account_id" => $invoice->payment_method == "BANK" ? $invoice->supplier_account_id : null,
+                    "pv_amount" => $invoice->total_amount,
                     "status" => "NEW",
-                    "trx_dtl_id" => $invoice->trx_dtl->trx_id,
+                    "trx_dtl_id" => $invoice->trx_id,
                     "created_by" => auth()->id(),
                 ]);
             }

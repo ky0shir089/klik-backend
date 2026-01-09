@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ChartOfAccount;
 use App\Models\GL;
 use App\Models\RV;
 use App\Models\Unit;
@@ -25,7 +26,6 @@ class ReportController extends Controller
         (new FastExcel($this->resultsGenerator($results)))->configureOptionsUsing(function ($writer) {
             $writer->DEFAULT_COLUMN_WIDTH = 18;
         })->export(storage_path('app/public/' . $filename), function ($row) use ($columns) {
-            info($row);
             return $columns($row);
         });
     }
@@ -135,12 +135,6 @@ class ReportController extends Controller
             ], 403);
         }
 
-        $dirname = dirname(storage_path("app/public/reports/bank"));
-
-        if (!file_exists($dirname)) {
-            mkdir(dirname($dirname), 0755, true);
-        }
-
         $id = "reports/bank/" . Str::random(6) . ".xlsx";
         $from = Carbon::parse($request->from);
         $to = Carbon::parse($request->to);
@@ -201,5 +195,115 @@ class ReportController extends Controller
         $this->generateExcelReport($exportRows, $columns, $id);
 
         return response()->download(storage_path('app/public/' . $id), "bank-report.xlsx");
+    }
+
+    public function reportGl(Request $request)
+    {
+        if (!auth()->user()->tokenCan('report-gl:download')) {
+            return response()->json([
+                "success" => false,
+                "message" => "Unauthorized",
+            ], 403);
+        }
+
+        $id = "reports/gl/" . Str::random(6) . ".xlsx";
+        $from = $request->from;
+        $to = $request->to;
+
+        $data = ChartOfAccount::select("id", "code", "description")
+            ->withSum([
+                "gl as saldo_awal" => function ($query) use ($from) {
+                    $query->where("date", "<", $from);
+                }
+            ], "debit")
+            ->withSum([
+                "gl as saldo_akhir" => function ($query) use ($from) {
+                    $query->where("date", "<", $from);
+                }
+            ], "credit")
+            ->with([
+                "gl" => function ($query) use ($from, $to) {
+                    $query->whereBetween("date", [$from, $to]);
+                }
+            ])
+            ->withSum([
+                "gl" => function ($query) use ($from, $to) {
+                    $query->whereBetween("date", [$from, $to]);
+                }
+            ], "debit")
+            ->withSum([
+                "gl" => function ($query) use ($from, $to) {
+                    $query->whereBetween("date", [$from, $to]);
+                }
+            ], "credit")
+            ->whereRelation("gl", "date", [$from, $to])
+            ->oldest("id")
+            ->get();
+
+        $rows = collect();
+
+        foreach ($data as $coa) {
+            $startingBalance = $coa->saldo_awal == 0 ? $coa->saldo_akhir : $coa->saldo_awal;
+
+            $rows->push([
+                'Keterangan' => $coa->code . '.' . $coa->description,
+                'No Jurnal' => '',
+                'Tanggal' => '',
+                'Debit' => '',
+                'Credit' => '',
+                'Balance' => $startingBalance,
+            ]);
+
+            foreach ($coa->gl as $gl) {
+                $totalDebit = $gl->gl_sum_debit == 0 ? $coa->gl_sum_debit : $coa->gl_sum_credit;
+                $totalCredit = $gl->gl_sum_credit == 0 ? $coa->gl_sum_credit : $coa->gl_sum_debit;
+                $endingBalance = $startingBalance + $totalDebit - $totalCredit;
+
+                $rows->push([
+                    'Keterangan' => $gl->description,
+                    'No Jurnal' => $gl->gl_no,
+                    'Tanggal' => $gl->date,
+                    'Debit' => $gl->debit,
+                    'Credit' => $gl->credit,
+                    'Balance' => ''
+                ]);
+            }
+
+            $rows->push(
+                [
+                    'Keterangan' => 'TOTAL ' .  $coa->code . '.' . $coa->description,
+                    'No Jurnal' => '',
+                    'Tanggal' => '',
+                    'Debit' =>  $totalDebit,
+                    'Credit' => $totalCredit,
+                    'Balance' => $endingBalance
+                ],
+                [
+                    'Keterangan' => '',
+                    'No Jurnal' => '',
+                    'Tanggal' => '',
+                    'Debit' => '',
+                    'Credit' => '',
+                    'Balance' => '',
+                ],
+
+            );
+        }
+
+        $columns = function ($row) {
+            return [
+                'Keterangan' => $row['Keterangan'],
+                'No Jurnal' => $row['No Jurnal'],
+                'Tanggal' => $row['Tanggal'],
+                'Debit' => $row['Debit'],
+                'Credit' => $row['Credit'],
+                'Balance' => $row['Balance'],
+            ];
+        };
+
+        $this->generateExcelReport($rows, $columns, $id);
+
+        return response()->download(storage_path('app/public/' . $id), "gl-report.xlsx");
+        // return $data;
     }
 }

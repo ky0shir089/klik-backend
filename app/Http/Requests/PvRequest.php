@@ -25,7 +25,7 @@ class PvRequest extends FormRequest
             'paid_date' => ['required', 'date'],
             'description' => ['required', 'string'],
             'payment_method' => ['required', 'string'],
-            'bank_account_id' => ['required', 'integer', 'exists:bank_accounts,id'],
+            'bank_account_id' => ['nullable', 'integer', 'exists:bank_accounts,id'],
             'pvs' => ['required', 'array', 'min:1'],
         ];
     }

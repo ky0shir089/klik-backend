@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 
@@ -42,12 +43,7 @@ class Invoice extends Model
 
     public function trx_dtl(): BelongsTo
     {
-        return $this->belongsTo(TrxDtl::class, 'inv_coa_id', 'coa_id');
-    }
-
-    public function coa(): BelongsTo
-    {
-        return $this->belongsTo(ChartOfAccount::class, 'inv_coa_id', 'id');
+        return $this->belongsTo(TrxDtl::class, 'trx_id', 'id');
     }
 
     public function pv(): MorphOne
@@ -58,5 +54,15 @@ class Invoice extends Model
     public function customer(): HasOneThrough
     {
         return $this->hasOneThrough(Supplier::class, SupplierAccount::class, 'supplier_id', 'id', 'supplier_account_id', 'id');
+    }
+
+    public function details(): HasMany
+    {
+        return $this->hasMany(InvoiceDetail::class, 'invoice_id', 'id');
+    }
+
+    public function attachment(): BelongsTo
+    {
+        return $this->belongsTo(FileUpload::class, 'file_upload_id', 'id');
     }
 }

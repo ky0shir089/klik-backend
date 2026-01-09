@@ -22,11 +22,14 @@ class InvoiceRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'rv_id' => ['nullable', 'integer', 'exists:receive_vouchers,id'],
-            'supplier_account_id' => ['required', 'integer', 'exists:supplier_accounts,id'],
+            'date' => ['required', 'date'],
+            'trx_id' => ['required', 'numeric', 'exists:type_trxes,id'],
+            'supplier_id' => ['required', 'numeric', 'exists:suppliers,id'],
+            'payment_method' => ['required', 'string'],
+            'supplier_account_id' => ['nullable', 'numeric', 'exists:supplier_accounts,id'],
             'description' => ['required', 'string'],
-            'amount' => ['required', 'integer'],
-            'inv_coa_id' => ['required', 'integer', 'exists:chart_of_accounts,id'],
+            'created_by' => ['numeric', 'exists:users,id'],
+            'updated_by' => ['nullable', 'numeric', 'exists:users,id'],
         ];
     }
 }

@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string("payment_method")->default("BANK");
             $table->foreignId("bank_account_id")->nullable()->constrained("bank_accounts")->cascadeOnDelete();
             $table->foreignId("supplier_id")->constrained("suppliers")->cascadeOnDelete();
-            $table->foreignId("supplier_account_id")->constrained("supplier_accounts")->cascadeOnDelete();
+            $table->foreignId("supplier_account_id")->nullable()->constrained("supplier_accounts")->cascadeOnDelete();
             $table->morphs("processable");
             $table->unsignedBigInteger("pv_amount");
             $table->string("status")->default("NEW");

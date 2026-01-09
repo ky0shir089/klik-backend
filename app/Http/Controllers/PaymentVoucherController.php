@@ -9,6 +9,7 @@ use App\Http\Resources\StoreResource;
 use App\Http\Resources\UpdateResource;
 use App\Models\GL;
 use App\Models\PaymentVoucher;
+use App\Models\Pph;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -69,6 +70,7 @@ class PaymentVoucherController extends Controller
                 $countPv = 1;
             } else {
                 $countPv = PaymentVoucher::query()
+                    ->whereNotNull("pv_no")
                     ->where("created_at", ">=", date('Y') . "-01-01")
                     ->where("created_at", "<=", date('Y') . "-12-31")
                     ->count() + 1;
@@ -76,34 +78,91 @@ class PaymentVoucherController extends Controller
             $pvNo = 'PV' . $currentYear . Str::padLeft($countPv++, 5, '0');
 
             $trxs = [];
-            $total_amount = 0;
-            $trx_coa_id = 0;
-            $bank_coa_id = 0;
             $authId = auth()->id();
+            $ledger = [];
 
             foreach ($request->pvs as $payment) {
                 $pv = PaymentVoucher::find($payment);
 
                 $trxs[] = $pv->trx_dtl_id;
 
+                $pv->pv_no = $pvNo;
+                $pv->description = $request->description;
+                $pv->payment_method = $request->payment_method;
+                $pv->bank_account_id = $request->bank_account_id;
+                $pv->status = "PAID";
+                $pv->paid_date = now();
+                $pv->updated_by = $authId;
+                $pv->save();
+
+                $gl = [
+                    "gl_no" => $pvNo,
+                    "date" => now(),
+                    "type" => 'OUT',
+                    "description" => $request->description,
+                    "created_by" => $authId,
+                    "updated_at" => null,
+                ];
+
                 if ($pv->trx_dtl_id == 2) {
-                    $pv->pv_no = $pvNo;
-                    $pv->description = $request->description;
-                    $pv->bank_account_id = $request->bank_account_id;
-                    $pv->status = "PAID";
-                    $pv->paid_date = now();
-                    $pv->updated_by = $authId;
-                    $pv->save();
+                    $debit = [
+                        ...$gl,
+                        "coa_id" => $pv->trx_dtl->trx->id,
+                        "debit" => $pv->pv_amount,
+                        "credit" => 0,
+                    ];
 
-                    $total_amount += $pv->pv_amount;
-                    $trx_coa_id = $pv->trx_dtl->trx->id;
-                    $bank_coa_id = $pv->bank_account->coa_id;
+                    $credit = [
+                        ...$gl,
+                        "coa_id" => $pv->payment_method == "BANK" ? $pv->bank_account->coa_id : 149,
+                        "debit" => 0,
+                        "credit" => $pv->pv_amount,
+                    ];
 
-                    $pv->processable()->update([
-                        "status" => "PAID",
-                        "updated_by" => $authId,
-                    ]);
+                    $ledger[] = $debit;
+                    $ledger[] = $credit;
+                } else {
+                    foreach ($pv->processable->details as $detail) {
+                        info($detail);
+                        $pphAmount = 0;
+
+                        if (isset($detail->pph_id)) {
+                            $pphAmount = $detail->pph->pph_amount;
+
+                            $credit2 = [
+                                ...$gl,
+                                "coa_id" => $detail->pph->coa_id,
+                                "debit" => 0,
+                                "credit" => $detail->pph->pph_amount,
+                            ];
+                        }
+
+                        $debit = [
+                            ...$gl,
+                            "coa_id" => $detail->invoice_id,
+                            "debit" => $detail->total_amount - $pphAmount,
+                            "credit" => 0,
+                        ];
+
+                        $credit = [
+                            ...$gl,
+                            "coa_id" => $pv->payment_method == "BANK" ? $pv->bank_account->coa_id : 149,
+                            "debit" => 0,
+                            "credit" => $detail->total_amount,
+                        ];
+
+                        $ledger[] = $debit;
+                        $ledger[] = $credit;
+                        if (isset($credit2)) {
+                            $ledger[] = $credit2;
+                        }
+                    }
                 }
+
+                $pv->processable()->update([
+                    "status" => "PAID",
+                    "updated_by" => $authId,
+                ]);
             }
 
             if (collect($trxs)->unique()->count() > 1) {
@@ -113,30 +172,7 @@ class PaymentVoucherController extends Controller
                 ], 400);
             }
 
-            $gl = [
-                "gl_no" => $pvNo,
-                "date" => now(),
-                "type" => 'OUT',
-                "description" => $request->description,
-                "created_by" => $authId,
-                "updated_at" => null,
-            ];
-
-            $debit = [
-                ...$gl,
-                "coa_id" => $trx_coa_id,
-                "debit" => $total_amount,
-                "credit" => 0,
-            ];
-
-            $credit = [
-                ...$gl,
-                "coa_id" => $request->payment_method == "BANK" ? $bank_coa_id : 149,
-                "debit" => 0,
-                "credit" => $total_amount,
-            ];
-
-            GL::insert([$debit, $credit]);
+            GL::insert($ledger);
 
             DB::commit();
 

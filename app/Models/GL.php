@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class GL extends Model
 {
@@ -27,4 +28,9 @@ class GL extends Model
         'created_at',
         'updated_at',
     ];
+
+    public function coa(): BelongsTo
+    {
+        return $this->belongsTo(ChartOfAccount::class, 'coa_id', 'id');
+    }
 }
