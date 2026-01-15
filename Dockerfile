@@ -12,7 +12,9 @@ RUN apk add --no-cache tzdata \
 RUN install-php-extensions \
     pcntl \
     pdo_mysql \
-    zip
+    zip \
+    gd \
+    intl
 
 # =======================
 # Composer stage (PHP 8.4)
@@ -37,7 +39,9 @@ RUN composer install \
     --prefer-dist \
     --no-interaction \
     --no-progress \
-    --no-scripts
+    --no-scripts \
+    --ignore-platform-req=ext-gd \
+    --ignore-platform-req=ext-intl
 
 # =======================
 # Final image
@@ -52,4 +56,4 @@ COPY --from=vendor /app/vendor ./vendor
 RUN echo "* * * * * cd /app && php artisan schedule:run >> /dev/null 2>&1" >> /etc/crontabs/root
 
 EXPOSE 8000
-ENTRYPOINT sh -c "crond && php artisan optimize && php artisan octane:frankenphp --host=0.0.0.0 --port=8000"
+ENTRYPOINT ["sh", "-c", "crond && php artisan optimize && php artisan octane:frankenphp --host=0.0.0.0 --port=8000"]
