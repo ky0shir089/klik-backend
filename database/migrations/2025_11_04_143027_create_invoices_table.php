@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string("payment_method")->default("BANK");
             $table->foreignId("supplier_account_id")->nullable()->constrained("supplier_accounts")->cascadeOnDelete();
             $table->string("description");
-            $table->unsignedInteger("total_amount");
+            $table->unsignedInteger("total_amount")->nullable()->default(0);
             $table->foreignId("file_upload_id")->nullable()->constrained("file_uploads")->cascadeOnDelete();
             $table->string("status")->default("REQUEST");
             $table->text("signature")->nullable();

@@ -20,6 +20,7 @@ class Invoice extends Model
         'payment_method',
         'supplier_account_id',
         'description',
+        'total_amount',
         'file_upload_id',
         'status',
         'signature',

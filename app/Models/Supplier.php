@@ -11,6 +11,7 @@ class Supplier extends Model
 
     protected $fillable = [
         'name',
+        'is_active',
         'created_by',
         'updated_by',
         'updated_at'
@@ -25,6 +26,6 @@ class Supplier extends Model
 
     public function account(): HasOne
     {
-        return $this->HasOne(SupplierAccount::class, 'supplier_id', 'id');
+        return $this->hasOne(SupplierAccount::class, 'supplier_id', 'id');
     }
 }

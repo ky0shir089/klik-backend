@@ -142,7 +142,7 @@ class ReportController extends Controller
         $saldoAwal = GL::query()
             ->where("coa_id", $request->bank)
             ->where("date", "<", $from)
-            ->sum(DB::raw("CASE WHEN type='IN' THEN credit ELSE -credit END"));
+            ->sum(DB::raw("CASE WHEN type='IN' THEN debit ELSE -credit END"));
 
         $data = GL::query()
             ->where("coa_id", $request->bank)
@@ -153,12 +153,12 @@ class ReportController extends Controller
         $saldoAkhir = $saldoAwal +
             $data->sum(
                 fn($row) =>
-                $row->type === 'IN' ? $row->credit : -$row->credit
+                $row->type === 'IN' ? $row->debit : -$row->credit
             );
 
         $startingBalance = [
             'date' => '',
-            'description' => 'STARTING BALANCE',
+            'description' => 'BEGINNING BALANCE',
             'gl_no' => '',
             'type' => 'IN',
             'debit' => '',
@@ -186,8 +186,8 @@ class ReportController extends Controller
                 'Tanggal' => $row["date"],
                 'Deskripsi' => $row["description"],
                 'No Dokumen' => $row["gl_no"],
-                'Uang Masuk' => $row["type"] == 'IN' ? $row["credit"] : '',
-                'Uang Keluar' => $row["type"] == 'OUT' ? $row["credit"] : '',
+                'Uang Masuk' => $row["debit"],
+                'Uang Keluar' => $row["credit"],
                 'Saldo' => $row["balance"],
             ];
         };
@@ -243,10 +243,11 @@ class ReportController extends Controller
         $rows = collect();
 
         foreach ($data as $coa) {
-            $startingBalance = $coa->saldo_awal == 0 ? $coa->saldo_akhir : $coa->saldo_awal;
+            $startingBalance = $coa->saldo_awal - $coa->saldo_akhir;
 
             $rows->push([
                 'Keterangan' => $coa->code . '.' . $coa->description,
+                'Kode Akun' => '',
                 'No Jurnal' => '',
                 'Tanggal' => '',
                 'Debit' => '',
@@ -255,12 +256,13 @@ class ReportController extends Controller
             ]);
 
             foreach ($coa->gl as $gl) {
-                $totalDebit = $gl->gl_sum_debit == 0 ? $coa->gl_sum_debit : $coa->gl_sum_credit;
-                $totalCredit = $gl->gl_sum_credit == 0 ? $coa->gl_sum_credit : $coa->gl_sum_debit;
+                $totalDebit = $coa->gl_sum_debit;
+                $totalCredit = $coa->gl_sum_credit;
                 $endingBalance = $startingBalance + $totalDebit - $totalCredit;
 
                 $rows->push([
                     'Keterangan' => $gl->description,
+                    'Kode Akun' => $coa->code,
                     'No Jurnal' => $gl->gl_no,
                     'Tanggal' => $gl->date,
                     'Debit' => $gl->debit,
@@ -272,14 +274,16 @@ class ReportController extends Controller
             $rows->push(
                 [
                     'Keterangan' => 'TOTAL ' .  $coa->code . '.' . $coa->description,
+                    'Kode Akun' => '',
                     'No Jurnal' => '',
                     'Tanggal' => '',
-                    'Debit' =>  $totalDebit,
-                    'Credit' => $totalCredit,
+                    'Debit' =>  (int)$totalDebit,
+                    'Credit' => (int)$totalCredit,
                     'Balance' => $endingBalance
                 ],
                 [
                     'Keterangan' => '',
+                    'Kode Akun' => '',
                     'No Jurnal' => '',
                     'Tanggal' => '',
                     'Debit' => '',
@@ -293,6 +297,7 @@ class ReportController extends Controller
         $columns = function ($row) {
             return [
                 'Keterangan' => $row['Keterangan'],
+                'Kode Akun' => $row['Kode Akun'],
                 'No Jurnal' => $row['No Jurnal'],
                 'Tanggal' => $row['Tanggal'],
                 'Debit' => $row['Debit'],
@@ -304,6 +309,5 @@ class ReportController extends Controller
         $this->generateExcelReport($rows, $columns, $id);
 
         return response()->download(storage_path('app/public/' . $id), "gl-report.xlsx");
-        // return $data;
     }
 }

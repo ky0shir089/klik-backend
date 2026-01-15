@@ -28,11 +28,11 @@ class SupplierAccount extends Model
 
     public function bank(): BelongsTo
     {
-        return $this->BelongsTo(Bank::class, 'bank_id', 'id');
+        return $this->belongsTo(Bank::class, 'bank_id', 'id');
     }
 
     public function supplier(): BelongsTo
     {
-        return $this->BelongsTo(Supplier::class, 'supplier_id', 'id');
+        return $this->belongsTo(Supplier::class, 'supplier_id', 'id');
     }
 }

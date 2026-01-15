@@ -48,6 +48,7 @@ class SupplierController extends Controller
         }
 
         $sql = Supplier::create($request->validated() + [
+            'is_active' => true,
             'created_by' => auth()->id(),
             'updated_at' => null,
         ]);

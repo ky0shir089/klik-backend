@@ -18,7 +18,7 @@ return new class extends Migration
             $table->foreignId("type_trx_id")->constrained("type_trxes")->cascadeOnDelete();
             $table->string("description");
             $table->string("pay_method")->default("BANK");
-            $table->string("bank_account_id");
+            $table->string("bank_account_id")->nullable();
             $table->foreignId("coa_id")->constrained("chart_of_accounts")->cascadeOnDelete();
             $table->unsignedInteger("starting_balance")->default(0);
             $table->unsignedInteger("used_balance")->default(0);

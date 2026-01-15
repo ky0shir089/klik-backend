@@ -81,6 +81,7 @@ class InvoiceController extends Controller
      */
     public function store(InvoiceRequest $request)
     {
+        info($request);
         if (!auth()->user()->tokenCan("invoice:add")) {
             return response()->json([
                 "success" => false,
@@ -110,6 +111,7 @@ class InvoiceController extends Controller
 
             foreach ($request->details as $detail) {
                 $totalAmount = $detail['item_amount'] - $detail['pph_amount'] + $detail['ppn_amount'];
+                info($totalAmount);
 
                 $details[] = [
                     'invoice_id' => $sql->id,
