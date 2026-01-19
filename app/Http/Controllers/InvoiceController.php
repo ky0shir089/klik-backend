@@ -33,13 +33,24 @@ class InvoiceController extends Controller
                 "supplier_account",
                 "supplier_account.supplier",
                 "supplier_account.bank",
+                "trx_dtl",
+                "trx_dtl.trx",
             ])
+            ->when(auth()->user()->role->id == 3, function ($query) {
+                $query->where("created_by", auth()->id());
+            })
             ->when($request->search, function ($query, $search) {
                 $query->whereAny([
                     "invoice_no",
                     "description",
-                    "amount",
+                    "total_amount",
                 ], "ilike", "%$search%");
+            })
+            ->when($request->type_trx_id, function ($query, $type_trx_id) {
+                $query->where("type_trx_id", $type_trx_id);
+            })
+            ->when($request->method, function ($query, $method) {
+                $query->where("payment_method", $method);
             })
             ->latest("id")
             ->paginate($request->size);
@@ -61,6 +72,8 @@ class InvoiceController extends Controller
                 "supplier_account",
                 "supplier_account.supplier",
                 "supplier_account.bank",
+                "trx_dtl",
+                "trx_dtl.trx",
             ])
             ->where("status", "REQUEST")
             ->when($request->search, function ($query, $search) {
@@ -81,7 +94,6 @@ class InvoiceController extends Controller
      */
     public function store(InvoiceRequest $request)
     {
-        info($request);
         if (!auth()->user()->tokenCan("invoice:add")) {
             return response()->json([
                 "success" => false,
@@ -93,7 +105,7 @@ class InvoiceController extends Controller
 
         try {
             $year = date('y');
-            $invoice_no = 'INV' . $year . Str::padLeft(Invoice::count() + 1, 5, '0');
+            $invoice_no = 'KLIK/' . date("m") . '/' . $year . '/' . Str::padLeft(Invoice::count() + 1, 5, '0');
             $authId = auth()->id();
 
             if ($request->hasFile('attachment')) {
@@ -111,7 +123,6 @@ class InvoiceController extends Controller
 
             foreach ($request->details as $detail) {
                 $totalAmount = $detail['item_amount'] - $detail['pph_amount'] + $detail['ppn_amount'];
-                info($totalAmount);
 
                 $details[] = [
                     'invoice_id' => $sql->id,

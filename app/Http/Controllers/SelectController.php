@@ -87,7 +87,7 @@ class SelectController extends Controller
             ->when($request->in_out, function ($query, $in_out) {
                 $query->where("in_out", $in_out);
             })
-            ->orderBy("id", "asc")
+            ->orderBy("name", "asc")
             ->get();
 
         return new GetResource($query);

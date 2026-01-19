@@ -99,7 +99,6 @@ class PaymentVoucherController extends Controller
                     "gl_no" => $pvNo,
                     "date" => now(),
                     "type" => 'OUT',
-                    "description" => $request->description,
                     "created_by" => $authId,
                     "updated_at" => null,
                 ];
@@ -107,6 +106,7 @@ class PaymentVoucherController extends Controller
                 if ($pv->trx_dtl_id == 2) {
                     $debit = [
                         ...$gl,
+                        "description" => $request->description,
                         "coa_id" => $pv->trx_dtl->trx->id,
                         "debit" => $pv->pv_amount,
                         "credit" => 0,
@@ -114,6 +114,7 @@ class PaymentVoucherController extends Controller
 
                     $credit = [
                         ...$gl,
+                        "description" => $request->description,
                         "coa_id" => $pv->payment_method == "BANK" ? $pv->bank_account->coa_id : 149,
                         "debit" => 0,
                         "credit" => $pv->pv_amount,
@@ -123,22 +124,24 @@ class PaymentVoucherController extends Controller
                     $ledger[] = $credit;
                 } else {
                     foreach ($pv->processable->details as $detail) {
-                        info($detail);
+                        info($detail->pph);
                         $pphAmount = 0;
 
                         if (isset($detail->pph_id)) {
-                            $pphAmount = $detail->pph->pph_amount;
+                            $pphAmount = $detail->pph->pph_amount ?? 0;
 
                             $credit2 = [
                                 ...$gl,
+                                "description" => $detail->description,
                                 "coa_id" => $detail->pph->coa_id,
                                 "debit" => 0,
-                                "credit" => $detail->pph->pph_amount,
+                                "credit" => $detail->pph->pph_amount ?? 0,
                             ];
                         }
 
                         $debit = [
                             ...$gl,
+                            "description" => $detail->description,
                             "coa_id" => $detail->invoice_id,
                             "debit" => $detail->total_amount - $pphAmount,
                             "credit" => 0,
@@ -146,6 +149,7 @@ class PaymentVoucherController extends Controller
 
                         $credit = [
                             ...$gl,
+                            "description" => $detail->description,
                             "coa_id" => $pv->payment_method == "BANK" ? $pv->bank_account->coa_id : 149,
                             "debit" => 0,
                             "credit" => $detail->total_amount,
@@ -172,6 +176,7 @@ class PaymentVoucherController extends Controller
                 ], 400);
             }
 
+            info($ledger);
             GL::insert($ledger);
 
             DB::commit();

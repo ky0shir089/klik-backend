@@ -42,7 +42,16 @@ class RvController extends Controller
                     "journal_number"
                 ], "ilike", "%$search%");
             })
-            ->orderBy("id", "desc")
+            ->when($request->type_trx_id, function ($query, $type_trx_id) {
+                $query->where("type_trx_id", $type_trx_id);
+            })
+            ->when($request->method, function ($query, $method) {
+                $query->where("pay_method", $method);
+            })
+            ->when($request->bank_account_id, function ($query, $bank_account_id) {
+                $query->where("bank_account_id", $bank_account_id);
+            })
+            ->latest("id")
             ->paginate($request->size);
 
         return new GetResource($query);

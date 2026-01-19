@@ -8,6 +8,7 @@ use App\Http\Controllers\BankController;
 use App\Http\Controllers\ChartOfAccountController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\MemoInvoiceController;
 use App\Http\Controllers\MemoPaymentController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\ModuleController;
@@ -86,6 +87,7 @@ Route::middleware('auth:sanctum')
                         Route::resource('supplier', SupplierController::class);
                         Route::resource('rv-classification', RvClassificationController::class);
                         Route::get('invoice-inbox', [InvoiceController::class, 'inbox']);
+                        Route::get('memo-invoice/{invoice}', MemoInvoiceController::class);
                     });
 
                 Route::prefix('v2')
