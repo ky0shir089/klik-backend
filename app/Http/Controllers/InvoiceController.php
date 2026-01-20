@@ -189,7 +189,7 @@ class InvoiceController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Invoice $invoice)
+    public function update(InvoiceRequest $request, Invoice $invoice)
     {
         if (!auth()->user()->tokenCan("invoice:edit")) {
             return response()->json([
@@ -201,11 +201,41 @@ class InvoiceController extends Controller
         DB::beginTransaction();
 
         try {
-            $invoice->update([
-                'status' => $request->status,
-                "signature" => $request->signature,
-                'updated_by' => auth()->id(),
-            ]);
+            $authId = auth()->id();
+
+            if ($request->status == "REQUEST") {
+                $invoice->update($request->validated() + [
+                    'status' => $request->status,
+                    "signature" => $request->signature,
+                    'updated_by' => $authId,
+                ]);
+
+                $details = [];
+
+                foreach ($request->details as $detail) {
+                    $totalAmount = $detail['item_amount'] - $detail['pph_amount'] + $detail['ppn_amount'];
+
+                    $details[] = [
+                        'invoice_id' => $invoice->id,
+                        'inv_coa_id' => $detail['inv_coa_id'],
+                        'description' => $detail['description'],
+                        'item_amount' => $detail['item_amount'],
+                        'pph_id' => isset($detail['pph_id']) ? $detail['pph_id'] : null,
+                        'pph_amount' => $detail['pph_amount'],
+                        'ppn_rate' => $detail['ppn_rate'],
+                        'ppn_amount' => $detail['ppn_amount'],
+                        'rv_id' => isset($detail['rv_id']) ? $detail['rv_id'] : null,
+                        'total_amount' => $totalAmount,
+                        'created_by' => $authId,
+                        'created_at' => now(),
+                        'updated_at' => null,
+                    ];
+                }
+
+                $invoice->details()->upsert($details, ['invoice_id', 'inv_coa_id']);
+                $invoice->total_amount = collect($details)->sum("total_amount");
+                $invoice->save();
+            }
 
             if ($request->status == "APPROVE") {
                 $invoice->pv()->create([
@@ -214,7 +244,7 @@ class InvoiceController extends Controller
                     "pv_amount" => $invoice->total_amount,
                     "status" => "NEW",
                     "trx_dtl_id" => $invoice->trx_id,
-                    "created_by" => auth()->id(),
+                    "created_by" => $authId,
                 ]);
             }
 

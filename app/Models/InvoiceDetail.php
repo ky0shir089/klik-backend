@@ -10,6 +10,7 @@ class InvoiceDetail extends Model
     protected $table = 'invoice_details';
 
     protected $fillable = [
+        'id',
         'invoice_id',
         'inv_coa_id',
         'description',

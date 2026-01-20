@@ -163,7 +163,7 @@ class ReportController extends Controller
             'type' => 'IN',
             'debit' => '',
             'credit' => '',
-            'balance' => $saldoAwal,
+            'balance' => (int)$saldoAwal,
         ];
 
         $endingBalance = [
