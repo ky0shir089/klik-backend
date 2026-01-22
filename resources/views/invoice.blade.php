@@ -6,14 +6,14 @@
     <meta name="viewport"
         content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Memo Pelunasan</title>
+    <title>Memo Invoice</title>
     <link rel="stylesheet" href="{{ resource_path('css/pdf.css') }}" type="text/css">
 </head>
 
 <body>
     <div class="min-h-screen p-6">
         <div>
-            <h1 class="text-3xl font-medium text-center">Memo Pelunasan</h1>
+            <h1 class="text-3xl font-medium text-center">Memo Invoice</h1>
 
             <table>
                 <tbody>
@@ -61,10 +61,10 @@
                         <th class="border-black">No</th>
                         <th class="border-black">Code Trx</th>
                         <th class="border-black">Keterangan</th>
-                        <th class="border-black">Item Amount</th>
-                        <th class="border-black">PPh Amount</th>
-                        <th class="border-black">PPn Amount</th>
-                        <th class="border-black">Total Amount</th>
+                        <th class="border-black">Amount</th>
+                        <th class="border-black">PPh</th>
+                        <th class="border-black">PPn</th>
+                        <th class="border-black">Total</th>
                     </tr>
                 </thead>
 

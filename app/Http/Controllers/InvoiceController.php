@@ -203,13 +203,18 @@ class InvoiceController extends Controller
         try {
             $authId = auth()->id();
 
-            if ($request->status == "REQUEST") {
-                $invoice->update($request->validated() + [
-                    'status' => $request->status,
-                    "signature" => $request->signature,
-                    'updated_by' => $authId,
-                ]);
+            if ($request->hasFile('attachment')) {
+                $file = (new FileUploadService)->handleUpload($request->file('attachment'));
+            }
 
+            $invoice->update($request->validated() + [
+                'file_upload_id' => $file->id ?? $invoice->file_upload_id,
+                'status' => $request->status,
+                "signature" => $request->signature,
+                'updated_by' => $authId,
+            ]);
+
+            if ($request->status == "REQUEST") {
                 $details = [];
 
                 foreach ($request->details as $detail) {

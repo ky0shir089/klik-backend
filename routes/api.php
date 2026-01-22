@@ -7,6 +7,7 @@ use App\Http\Controllers\BankAccountController;
 use App\Http\Controllers\BankController;
 use App\Http\Controllers\ChartOfAccountController;
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\GeneralLedgerController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\MemoInvoiceController;
 use App\Http\Controllers\MemoPaymentController;
@@ -73,6 +74,8 @@ Route::middleware('auth:sanctum')
                         Route::resource('bank', BankController::class);
                         Route::resource('bank-account', BankAccountController::class);
                         Route::resource('pph', PphController::class);
+                        Route::resource('gl', GeneralLedgerController::class);
+                        Route::get('journal-input/{gl_no}', [GeneralLedgerController::class, 'show']);
                     });
             });
 

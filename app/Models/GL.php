@@ -33,4 +33,9 @@ class GL extends Model
     {
         return $this->belongsTo(ChartOfAccount::class, 'coa_id', 'id');
     }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by', 'id');
+    }
 }
