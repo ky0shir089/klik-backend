@@ -225,7 +225,9 @@ class ReportController extends Controller
             ], "credit")
             ->with([
                 "gl" => function ($query) use ($from, $to) {
-                    $query->whereBetween("date", [$from, $to]);
+                    $query->whereBetween("date", [$from, $to])
+                        ->orderBy("date", "asc")
+                        ->orderBy("id", "asc");
                 }
             ])
             ->withSum([

@@ -50,7 +50,7 @@
             <div class="text-justify">
                 <span>Dengan Hormat,</span><br />
                 <span>Sehubungan dengan adanya {{ $invoice->description }}, maka dengan ini saya ingin mengajukan
-                    rincian berikut ini: </span>
+                    pembayaran dengan rincian sebagai berikut: </span>
             </div>
 
             <br />
@@ -59,9 +59,9 @@
                 <thead>
                     <tr class="bg-red-500">
                         <th class="border-black">No</th>
-                        <th class="border-black">Code Trx</th>
+                        <th class="border-black">Kode Trx</th>
                         <th class="border-black">Keterangan</th>
-                        <th class="border-black">Amount</th>
+                        <th class="border-black">Jumlah</th>
                         <th class="border-black">PPh</th>
                         <th class="border-black">PPn</th>
                         <th class="border-black">Total</th>
@@ -73,8 +73,7 @@
                     @foreach ($invoice->details as $detail)
                         <tr>
                             <td class="p-1 text-xs border-black">{{ $index++ }}</td>
-                            <td class="p-1 text-xs border-black">{{ $detail->coa->code }} -
-                                {{ $detail->coa->description }}</td>
+                            <td class="p-1 text-xs border-black">{{ $detail->coa->description }}</td>
                             <td class="p-1 text-xs text-center border-black">{{ $detail->description }}</td>
                             <td class="p-1 text-xs text-right border-black">
                                 {{ Number::format($detail->item_amount) }}

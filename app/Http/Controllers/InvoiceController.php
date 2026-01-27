@@ -105,7 +105,7 @@ class InvoiceController extends Controller
 
         try {
             $year = date('y');
-            $invoice_no = 'KLIK/' . date("m") . '/' . $year . '/' . Str::padLeft(Invoice::count() + 1, 5, '0');
+            $invoice_no = 'KLIK/' . date("m") . '/' . $year . '/' . Str::padLeft(Invoice::count() + 1, 3, '0');
             $authId = auth()->id();
 
             if ($request->hasFile('attachment')) {
