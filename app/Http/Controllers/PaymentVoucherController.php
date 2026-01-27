@@ -91,13 +91,13 @@ class PaymentVoucherController extends Controller
                 $pv->payment_method = $request->payment_method;
                 $pv->bank_account_id = $request->bank_account_id;
                 $pv->status = "PAID";
-                $pv->paid_date = now();
+                $pv->paid_date = $request->paid_date;
                 $pv->updated_by = $authId;
                 $pv->save();
 
                 $gl = [
                     "gl_no" => $pvNo,
-                    "date" => $request->date,
+                    "date" => $request->paid_date,
                     "type" => 'OUT',
                     "created_by" => $authId,
                     "created_at" => now(),
