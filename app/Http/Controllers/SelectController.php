@@ -181,13 +181,20 @@ class SelectController extends Controller
         return new GetResource($query);
     }
 
-    public function rv()
+    public function rv(Request $request)
     {
-        $query = RV::query()
+        $query = RV::select("id", "rv_no", "description", "ending_balance")
             ->where("ending_balance", ">", 0)
             ->whereNull("customer_id")
+            ->when($request->search, function ($query, $search) {
+                $query->whereAny([
+                    "rv_no",
+                    "description",
+                    "ending_balance",
+                ], "ilike", "%$search%");
+            })
             ->oldest("id")
-            ->get();
+            ->paginate($request->size);
 
         return new GetResource($query);
     }

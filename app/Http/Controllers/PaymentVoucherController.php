@@ -97,7 +97,7 @@ class PaymentVoucherController extends Controller
 
                 $gl = [
                     "gl_no" => $pvNo,
-                    "date" => now(),
+                    "date" => $request->date,
                     "type" => 'OUT',
                     "created_by" => $authId,
                     "created_at" => now(),
