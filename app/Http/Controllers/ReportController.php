@@ -82,7 +82,9 @@ class ReportController extends Controller
                 "classifications:unit_id,rv_id",
                 "classifications.rv:id,rv_no,date,starting_balance",
             ])
-            ->whereRelation("auction", "auction_date", [$from, $to])
+            ->whereHas("auction", function ($query) use ($from, $to) {
+                $query->whereBetween("auction_date", [$from, $to]);
+            })
             ->get();
 
         $columns = function ($row) {
@@ -236,7 +238,9 @@ class ReportController extends Controller
                     $query->whereBetween("date", [$from, $to]);
                 }
             ], "credit")
-            ->whereRelation("gl", "date", [$from, $to])
+            ->whereHas("gl", function ($query) use ($from, $to) {
+                $query->whereBetween("date", [$from, $to]);
+            })
             ->oldest("id")
             ->get();
 
