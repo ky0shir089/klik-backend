@@ -237,7 +237,7 @@ class InvoiceController extends Controller
                     ];
                 }
 
-                $invoice->details()->upsert($details, ['invoice_id', 'inv_coa_id']);
+                $invoice->details()->upsert($details, ['invoice_id', 'inv_coa_id', 'description']);
                 $invoice->total_amount = collect($details)->sum("total_amount");
                 $invoice->save();
             }
