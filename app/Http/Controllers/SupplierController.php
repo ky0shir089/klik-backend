@@ -27,8 +27,10 @@ class SupplierController extends Controller
         $query = Supplier::query()
             ->with(["account", "account.bank"])
             ->when($request->search, function ($query, $search) {
-                $query->where("name", "ilike", "%$search%")
-                    ->orWhere("id", $search);
+                $query->whereAny([
+                    "name",
+                    "id",
+                ], "ilike", "%$search%");
             })
             ->orderBy("name", "asc")
             ->paginate($request->size);
