@@ -173,8 +173,7 @@ class InvoiceController extends Controller
         }
 
         return new GetResource($invoice->load([
-            "trx_dtl",
-            "trx_dtl.trx",
+            "type_trx",
             "supplier_account",
             "supplier_account.supplier",
             "supplier_account.bank",
