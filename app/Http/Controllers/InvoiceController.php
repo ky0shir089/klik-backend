@@ -9,6 +9,7 @@ use App\Http\Resources\StoreResource;
 use App\Http\Resources\UpdateResource;
 use App\Models\Invoice;
 use App\Models\InvoiceDetail;
+use App\Models\Pph;
 use App\Services\FileUploadService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -121,7 +122,10 @@ class InvoiceController extends Controller
             $details = [];
 
             foreach ($request->details as $detail) {
-                $totalAmount = $detail['item_amount'] - $detail['pph_amount'] + $detail['ppn_amount'];
+                $pph = Pph::find($detail['pph_id']);
+                $pphAmount = round($detail['item_amount'] * $pph->rate / 100);
+                $ppnAmount = round($detail['item_amount'] * $detail['ppn_rate'] / 100);
+                $totalAmount = round($detail['item_amount'] - $pphAmount + $ppnAmount);
 
                 $details[] = [
                     'invoice_id' => $sql->id,
@@ -129,9 +133,9 @@ class InvoiceController extends Controller
                     'description' => $detail['description'],
                     'item_amount' => $detail['item_amount'],
                     'pph_id' => isset($detail['pph_id']) ? $detail['pph_id'] : null,
-                    'pph_amount' => $detail['pph_amount'],
+                    'pph_amount' => $pphAmount,
                     'ppn_rate' => $detail['ppn_rate'],
-                    'ppn_amount' => $detail['ppn_amount'],
+                    'ppn_amount' => $ppnAmount,
                     'rv_id' => isset($detail['rv_id']) ? $detail['rv_id'] : null,
                     'total_amount' => $totalAmount,
                     'created_by' => $authId,
