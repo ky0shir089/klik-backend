@@ -72,8 +72,7 @@ class InvoiceController extends Controller
                 "supplier_account",
                 "supplier_account.supplier",
                 "supplier_account.bank",
-                "trx_dtl",
-                "trx_dtl.trx",
+                "type_trx",
             ])
             ->where("status", "REQUEST")
             ->when($request->search, function ($query, $search) {
