@@ -42,9 +42,9 @@ class Invoice extends Model
         return $this->belongsTo(SupplierAccount::class, 'supplier_account_id', 'id');
     }
 
-    public function trx_dtl(): BelongsTo
+    public function type_trx(): BelongsTo
     {
-        return $this->belongsTo(TrxDtl::class, 'trx_id', 'id');
+        return $this->belongsTo(TypeTrx::class, 'trx_id', 'id');
     }
 
     public function pv(): MorphOne

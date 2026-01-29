@@ -33,8 +33,7 @@ class InvoiceController extends Controller
                 "supplier_account",
                 "supplier_account.supplier",
                 "supplier_account.bank",
-                "trx_dtl",
-                "trx_dtl.trx",
+                "type_trx",
             ])
             ->when(auth()->user()->role->id == 3, function ($query) {
                 $query->where("created_by", auth()->id());

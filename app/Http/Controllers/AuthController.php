@@ -43,7 +43,7 @@ class AuthController extends Controller
         if (!$user) {
             return response()->json([
                 'success' => false,
-                'error' => 'User not found'
+                'message' => 'User not found'
             ], 400);
         }
 
