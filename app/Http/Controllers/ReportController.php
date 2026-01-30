@@ -153,7 +153,8 @@ class ReportController extends Controller
             ->with("coa")
             ->where("coa_id", $request->bank)
             ->whereBetween("date", [$from, $to])
-            ->oldest()
+            ->orderBy("date", "asc")
+            ->orderBy("id", "asc")
             ->get();
 
         $saldoAkhir = $saldoAwal - $data->sum("debit") + $data->sum("credit");
@@ -168,7 +169,7 @@ class ReportController extends Controller
         ];
 
         $header1 = [
-            'date' => isset($gl->coa) ? $gl[0]->coa->description : $data[0]->coa->description,
+            'date' => isset($gl) ? $gl[0]->coa->description : $data[0]->coa->description,
             'description' => '',
             'gl_no' => '',
             'debit' => '',
@@ -216,8 +217,8 @@ class ReportController extends Controller
                 'Tanggal' => $row["date"],
                 'Deskripsi' => $row["description"],
                 'No Dokumen' => $row["gl_no"],
-                'Uang Masuk' => $row["debit"],
-                'Uang Keluar' => $row["credit"],
+                'Uang Masuk' => $row["debit"] == '' ? '' : (int)$row["debit"],
+                'Uang Keluar' => $row["credit"] == '' ? '' : (int)$row["credit"],
                 'Saldo' => $row["balance"],
             ];
         };
@@ -334,8 +335,8 @@ class ReportController extends Controller
                 'Kode Akun' => $row['Kode Akun'],
                 'No Jurnal' => $row['No Jurnal'],
                 'Tanggal' => $row['Tanggal'],
-                'Debit' => $row['Debit'],
-                'Credit' => $row['Credit'],
+                'Debit' => $row['Debit'] == '' ? '' : (int)$row['Debit'],
+                'Credit' => $row['Credit'] == '' ? '' : (int)$row['Credit'],
                 'Balance' => $row['Balance'],
             ];
         };
