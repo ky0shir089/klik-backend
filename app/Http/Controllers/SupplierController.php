@@ -79,7 +79,7 @@ class SupplierController extends Controller
             ], 403);
         }
 
-        return new GetResource($supplier->load("account"));
+        return new GetResource($supplier->load(["account", "account.bank"]));
     }
 
     /**

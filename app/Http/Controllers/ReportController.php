@@ -141,28 +141,54 @@ class ReportController extends Controller
         $from = Carbon::parse($request->from);
         $to = Carbon::parse($request->to);
 
-        $saldoAwal = GL::query()
+        $gl = GL::query()
+            ->with("coa")
             ->where("coa_id", $request->bank)
             ->where("date", "<", $from)
-            ->sum(DB::raw("CASE WHEN type='IN' THEN debit ELSE -credit END"));
+            ->get();
+
+        $saldoAwal = $gl->sum("debit") - $gl->sum("credit");
 
         $data = GL::query()
+            ->with("coa")
             ->where("coa_id", $request->bank)
             ->whereBetween("date", [$from, $to])
             ->oldest()
             ->get();
 
-        $saldoAkhir = $saldoAwal +
-            $data->sum(
-                fn($row) =>
-                $row->type === 'IN' ? $row->debit : -$row->credit
-            );
+        $saldoAkhir = $saldoAwal - $data->sum("debit") + $data->sum("credit");
+
+        $header = [
+            'date' => 'LAPORAN BANK',
+            'description' => '',
+            'gl_no' => '',
+            'debit' => '',
+            'credit' => '',
+            'balance' => '',
+        ];
+
+        $header1 = [
+            'date' => isset($gl->coa) ? $gl[0]->coa->description : $data[0]->coa->description,
+            'description' => '',
+            'gl_no' => '',
+            'debit' => '',
+            'credit' => '',
+            'balance' => '',
+        ];
+
+        $header2 = [
+            'date' => 'PERIODE ' . $request->from . ' - ' . $request->to,
+            'description' => '',
+            'gl_no' => '',
+            'debit' => '',
+            'credit' => '',
+            'balance' => '',
+        ];
 
         $startingBalance = [
             'date' => '',
             'description' => 'BEGINNING BALANCE',
             'gl_no' => '',
-            'type' => 'IN',
             'debit' => '',
             'credit' => '',
             'balance' => (int)$saldoAwal,
@@ -172,13 +198,15 @@ class ReportController extends Controller
             'date' => '',
             'description' => 'ENDING BALANCE',
             'gl_no' => '',
-            'type' => 'OUT',
             'debit' => '',
             'credit' => '',
             'balance' => $saldoAkhir,
         ];
 
         $exportRows = collect()
+            ->push($header)
+            ->push($header1)
+            ->push($header2)
             ->push($startingBalance)
             ->merge($data)
             ->push($endingBalance);

@@ -121,10 +121,17 @@ class InvoiceController extends Controller
             $details = [];
 
             foreach ($request->details as $detail) {
-                $pph = Pph::find($detail['pph_id']);
-                $pphAmount = round($detail['item_amount'] * $pph->rate / 100);
-                $ppnAmount = round($detail['item_amount'] * $detail['ppn_rate'] / 100);
+                $pphAmount = 0;
+                $ppnAmount = 0;
+                if (isset($detail['pph_id'])) {
+                    $pph = Pph::find($detail['pph_id']);
+                    $pphAmount = round($detail['item_amount'] * $pph->rate / 100);
+                }
+                if (isset($detail['ppn_rate'])) {
+                    $ppnAmount = round($detail['item_amount'] * $detail['ppn_rate'] / 100);
+                }
                 $totalAmount = round($detail['item_amount'] - $pphAmount + $ppnAmount);
+
 
                 $details[] = [
                     'invoice_id' => $sql->id,
@@ -219,17 +226,27 @@ class InvoiceController extends Controller
                 $details = [];
 
                 foreach ($request->details as $detail) {
-                    $totalAmount = $detail['item_amount'] - $detail['pph_amount'] + $detail['ppn_amount'];
+                    $pphAmount = 0;
+                    $ppnAmount = 0;
+                    if (isset($detail['pph_id'])) {
+                        $pph = Pph::find($detail['pph_id']);
+                        $pphAmount = round($detail['item_amount'] * $pph->rate / 100);
+                    }
+                    if (isset($detail['ppn_rate'])) {
+                        $ppnAmount = round($detail['item_amount'] * $detail['ppn_rate'] / 100);
+                    }
+                    $totalAmount = round($detail['item_amount'] - $pphAmount + $ppnAmount);
 
                     $details[] = [
+                        'id' => $detail['id'],
                         'invoice_id' => $invoice->id,
                         'inv_coa_id' => $detail['inv_coa_id'],
                         'description' => $detail['description'],
                         'item_amount' => $detail['item_amount'],
                         'pph_id' => isset($detail['pph_id']) ? $detail['pph_id'] : null,
-                        'pph_amount' => $detail['pph_amount'],
+                        'pph_amount' => $pphAmount,
                         'ppn_rate' => $detail['ppn_rate'],
-                        'ppn_amount' => $detail['ppn_amount'],
+                        'ppn_amount' => $ppnAmount,
                         'rv_id' => isset($detail['rv_id']) ? $detail['rv_id'] : null,
                         'total_amount' => $totalAmount,
                         'created_by' => $authId,
@@ -238,7 +255,7 @@ class InvoiceController extends Controller
                     ];
                 }
 
-                $invoice->details()->upsert($details, ['invoice_id', 'inv_coa_id', 'description']);
+                $invoice->details()->upsert($details, ["id"]);
                 $invoice->total_amount = collect($details)->sum("total_amount");
                 $invoice->save();
             }
