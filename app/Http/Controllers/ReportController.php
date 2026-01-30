@@ -157,10 +157,10 @@ class ReportController extends Controller
             ->orderBy("id", "asc")
             ->get();
 
-        $saldoAkhir = $saldoAwal - $data->sum("debit") + $data->sum("credit");
+        $saldoAkhir = $saldoAwal + $data->sum("debit") - $data->sum("credit");
 
-        $header = [
-            'date' => 'LAPORAN BANK',
+        $headerTitle = [
+            'date' => 'Laporan Bank',
             'description' => '',
             'gl_no' => '',
             'debit' => '',
@@ -168,7 +168,7 @@ class ReportController extends Controller
             'balance' => '',
         ];
 
-        $header1 = [
+        $headerBank = [
             'date' => isset($gl) ? $gl[0]->coa->description : $data[0]->coa->description,
             'description' => '',
             'gl_no' => '',
@@ -177,8 +177,17 @@ class ReportController extends Controller
             'balance' => '',
         ];
 
-        $header2 = [
-            'date' => 'PERIODE ' . $request->from . ' - ' . $request->to,
+        $headerDate = [
+            'date' => 'Periode ' . $request->from . ' - ' . $request->to,
+            'description' => '',
+            'gl_no' => '',
+            'debit' => '',
+            'credit' => '',
+            'balance' => '',
+        ];
+
+        $headerSpace = [
+            'date' => '',
             'description' => '',
             'gl_no' => '',
             'debit' => '',
@@ -199,15 +208,16 @@ class ReportController extends Controller
             'date' => '',
             'description' => 'ENDING BALANCE',
             'gl_no' => '',
-            'debit' => '',
-            'credit' => '',
+            'debit' => (int)$data->sum("debit"),
+            'credit' => (int)$data->sum("credit"),
             'balance' => $saldoAkhir,
         ];
 
         $exportRows = collect()
-            ->push($header)
-            ->push($header1)
-            ->push($header2)
+            ->push($headerTitle)
+            ->push($headerBank)
+            ->push($headerDate)
+            ->push($headerSpace)
             ->push($startingBalance)
             ->merge($data)
             ->push($endingBalance);
