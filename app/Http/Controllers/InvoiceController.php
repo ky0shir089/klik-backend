@@ -111,7 +111,7 @@ class InvoiceController extends Controller
                 $file = (new FileUploadService)->handleUpload($request->file('attachment'));
             }
 
-            $sql = Invoice::create($request->validated() + [
+            $sql = Invoice::create($request->safe()->except(["attachment"]) + [
                 'invoice_no' => $invoice_no,
                 'file_upload_id' => $file->id ?? null,
                 'created_by' => $authId,
@@ -215,7 +215,7 @@ class InvoiceController extends Controller
                 $file = (new FileUploadService)->handleUpload($request->file('attachment'));
             }
 
-            $invoice->update($request->validated() + [
+            $invoice->update($request->safe()->except(["attachment"]) + [
                 'file_upload_id' => $file->id ?? $invoice->file_upload_id,
                 'status' => $request->status,
                 "signature" => $request->signature,
@@ -223,7 +223,9 @@ class InvoiceController extends Controller
             ]);
 
             if ($request->status == "REQUEST") {
-                $details = [];
+                $detail_update = [];
+                $detail_store = [];
+                $sumTotalAmount = 0;
 
                 foreach ($request->details as $detail) {
                     $pphAmount = 0;
@@ -236,27 +238,49 @@ class InvoiceController extends Controller
                         $ppnAmount = round($detail['item_amount'] * $detail['ppn_rate'] / 100);
                     }
                     $totalAmount = round($detail['item_amount'] - $pphAmount + $ppnAmount);
+                    $sumTotalAmount += $totalAmount;
 
-                    $details[] = [
-                        'id' => $detail['id'],
-                        'invoice_id' => $invoice->id,
-                        'inv_coa_id' => $detail['inv_coa_id'],
-                        'description' => $detail['description'],
-                        'item_amount' => $detail['item_amount'],
-                        'pph_id' => isset($detail['pph_id']) ? $detail['pph_id'] : null,
-                        'pph_amount' => $pphAmount,
-                        'ppn_rate' => $detail['ppn_rate'],
-                        'ppn_amount' => $ppnAmount,
-                        'rv_id' => isset($detail['rv_id']) ? $detail['rv_id'] : null,
-                        'total_amount' => $totalAmount,
-                        'created_by' => $authId,
-                        'created_at' => now(),
-                        'updated_at' => null,
-                    ];
+                    if (isset($detail['id'])) {
+                        $detail_update[] = [
+                            'id' => $detail['id'],
+                            'invoice_id' => $invoice->id,
+                            'inv_coa_id' => $detail['inv_coa_id'],
+                            'description' => $detail['description'],
+                            'item_amount' => $detail['item_amount'],
+                            'pph_id' => isset($detail['pph_id']) ? $detail['pph_id'] : null,
+                            'pph_amount' => $pphAmount,
+                            'ppn_rate' => $detail['ppn_rate'],
+                            'ppn_amount' => $ppnAmount,
+                            'rv_id' => isset($detail['rv_id']) ? $detail['rv_id'] : null,
+                            'total_amount' => $totalAmount,
+                            'created_by' => $authId,
+                            'created_at' => now(),
+                            'updated_at' => null,
+                        ];
+                    } else {
+                        $detail_store[] = [
+                            'invoice_id' => $invoice->id,
+                            'inv_coa_id' => $detail['inv_coa_id'],
+                            'description' => $detail['description'],
+                            'item_amount' => $detail['item_amount'],
+                            'pph_id' => isset($detail['pph_id']) ? $detail['pph_id'] : null,
+                            'pph_amount' => $pphAmount,
+                            'ppn_rate' => $detail['ppn_rate'],
+                            'ppn_amount' => $ppnAmount,
+                            'rv_id' => isset($detail['rv_id']) ? $detail['rv_id'] : null,
+                            'total_amount' => $totalAmount,
+                            'created_by' => $authId,
+                            'created_at' => now(),
+                            'updated_at' => null,
+                        ];
+                    }
                 }
 
-                $invoice->details()->upsert($details, ["id"]);
-                $invoice->total_amount = collect($details)->sum("total_amount");
+                $invoice->details()->upsert($detail_update, ["id"]);
+                if (count($detail_store) > 0) {
+                    $invoice->details()->createMany($detail_store);
+                }
+                $invoice->total_amount = $sumTotalAmount;
                 $invoice->save();
             }
 

@@ -127,6 +127,7 @@ class PaymentVoucherController extends Controller
                 } else {
                     foreach ($pv->processable->details as $detail) {
                         $pphAmount = 0;
+                        $ppnAmount = 0;
 
                         if (isset($detail->pph_id)) {
                             $pphAmount = $detail->item_amount * ($detail->pph->rate / 100);
@@ -137,6 +138,18 @@ class PaymentVoucherController extends Controller
                                 "coa_id" => $detail->pph->coa_id,
                                 "debit" => 0,
                                 "credit" => $pphAmount,
+                            ];
+                        }
+
+                        if (isset($detail->ppn_rate)) {
+                            $ppnAmount = $detail->item_amount * ($detail->ppn_rate / 100);
+
+                            $debit2 = [
+                                ...$gl,
+                                "description" => $detail->description,
+                                "coa_id" => 151,
+                                "debit" => $ppnAmount,
+                                "credit" => 0,
                             ];
                         }
 
@@ -153,10 +166,13 @@ class PaymentVoucherController extends Controller
                             "description" => $detail->description,
                             "coa_id" => $pv->payment_method == "BANK" ? $pv->bank_account->coa_id : 149,
                             "debit" => 0,
-                            "credit" => $detail->item_amount - $pphAmount,
+                            "credit" => $detail->total_amount,
                         ];
 
                         $ledger[] = $debit;
+                        if (isset($debit2)) {
+                            $ledger[] = $debit2;
+                        }
                         $ledger[] = $credit;
                         if (isset($credit2)) {
                             $ledger[] = $credit2;

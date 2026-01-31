@@ -105,7 +105,6 @@ class GeneralLedgerController extends Controller
      */
     public function show(Request $request)
     {
-        info($request);
         if (!auth()->user()->tokenCan("journal-input:read")) {
             return response()->json([
                 "success" => false,

@@ -24,7 +24,7 @@ class ChartOfAccountRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'code' => ['required', 'string', 'min:7',],
+            'code' => ['required', 'string', 'min:5',],
             'description' => ['required', 'string'],
             'type' => ['required', 'string', Rule::enum(CoaType::class)],
             'parent_id' => ['nullable', 'integer', 'exists:chart_of_accounts,id'],
