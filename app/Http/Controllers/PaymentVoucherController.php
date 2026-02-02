@@ -105,7 +105,6 @@ class PaymentVoucherController extends Controller
                 ];
 
                 if ($pv->trx_dtl_id == 2) {
-                    info($pv->trx_dtl);
                     $debit = [
                         ...$gl,
                         "description" => $request->description,

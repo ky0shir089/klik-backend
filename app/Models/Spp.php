@@ -59,4 +59,9 @@ class Spp extends Model
     {
         return $this->hasMany(SppDetail::class, 'spp_id', 'id');
     }
+
+    public function detail(): HasOne
+    {
+        return $this->hasOne(SppDetail::class, 'spp_id', 'id');
+    }
 }
