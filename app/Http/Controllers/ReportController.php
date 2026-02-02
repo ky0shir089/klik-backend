@@ -82,7 +82,7 @@ class ReportController extends Controller
                 "classifications:unit_id,rv_id",
                 "classifications.rv:id,rv_no,date,starting_balance",
                 "spp.detail",
-                "spp.detail.pv:spp_id,paid_date"
+                "spp.detail.pv:spp_id,pv_no,paid_date"
             ])
             ->whereHas("auction", function ($query) use ($from, $to) {
                 $query->whereBetween("auction_date", [$from, $to]);
@@ -122,6 +122,7 @@ class ReportController extends Controller
                 'Selisih' => $row->diff_price,
                 'Nomor Paket' => $row->package_number,
                 'Nomor Kontrak' => $row->contract_number,
+                'No PV' => $row->spp?->detail->pv->pv_no,
                 'Tgl PV' => $row->spp?->detail->pv->paid_date,
             ];
         };
