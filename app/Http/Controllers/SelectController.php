@@ -57,6 +57,9 @@ class SelectController extends Controller
             ->when($request->type == "BANK", function ($query) {
                 $query->where("parent_id", 4);
             })
+            ->when($request->type == "KAS", function ($query) {
+                $query->where("parent_id", 3);
+            })
             ->when($request->type == "PARENT", function ($query) {
                 $query->whereNull("parent_id");
             })

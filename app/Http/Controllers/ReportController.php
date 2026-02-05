@@ -359,4 +359,114 @@ class ReportController extends Controller
 
         return response()->download(storage_path('app/public/' . $id), "gl-report.xlsx");
     }
+
+    public function reportKas(Request $request)
+    {
+        if (!auth()->user()->tokenCan($request->permission)) {
+            return response()->json([
+                "success" => false,
+                "message" => "Unauthorized",
+            ], 403);
+        }
+
+        $id = "reports/kas/" . Str::random(6) . ".xlsx";
+        $from = Carbon::parse($request->from);
+        $to = Carbon::parse($request->to);
+
+        $gl = GL::query()
+            ->with("coa")
+            ->where("coa_id", $request->cash)
+            ->where("date", "<", $from)
+            ->get();
+
+        $saldoAwal = $gl->sum("debit") - $gl->sum("credit");
+
+        $data = GL::query()
+            ->with("coa")
+            ->where("coa_id", $request->cash)
+            ->whereBetween("date", [$from, $to])
+            ->orderBy("date", "asc")
+            ->orderBy("id", "asc")
+            ->get();
+
+        $saldoAkhir = $saldoAwal + $data->sum("debit") - $data->sum("credit");
+
+        $headerTitle = [
+            'date' => 'Laporan Kas',
+            'description' => '',
+            'gl_no' => '',
+            'debit' => '',
+            'credit' => '',
+            'balance' => '',
+        ];
+
+        $headerKas = [
+            'date' => count($gl) > 0 ? $gl[0]->coa->description : $data[0]->coa->description,
+            'description' => '',
+            'gl_no' => '',
+            'debit' => '',
+            'credit' => '',
+            'balance' => '',
+        ];
+
+        $headerDate = [
+            'date' => 'Periode ' . $request->from . ' - ' . $request->to,
+            'description' => '',
+            'gl_no' => '',
+            'debit' => '',
+            'credit' => '',
+            'balance' => '',
+        ];
+
+        $headerSpace = [
+            'date' => '',
+            'description' => '',
+            'gl_no' => '',
+            'debit' => '',
+            'credit' => '',
+            'balance' => '',
+        ];
+
+        $startingBalance = [
+            'date' => '',
+            'description' => 'BEGINNING BALANCE',
+            'gl_no' => '',
+            'debit' => '',
+            'credit' => '',
+            'balance' => (int)$saldoAwal,
+        ];
+
+        $endingBalance = [
+            'date' => '',
+            'description' => 'ENDING BALANCE',
+            'gl_no' => '',
+            'debit' => (int)$data->sum("debit"),
+            'credit' => (int)$data->sum("credit"),
+            'balance' => $saldoAkhir,
+        ];
+
+        $exportRows = collect()
+            ->push($headerTitle)
+            ->push($headerKas)
+            ->push($headerDate)
+            ->push($headerSpace)
+            ->push($startingBalance)
+            ->merge($data)
+            ->push($endingBalance);
+
+        $columns = function ($row) {
+            return [
+                'Tanggal' => $row["date"],
+                'Deskripsi' => $row["description"],
+                'No Dokumen' => $row["gl_no"],
+                'Uang Masuk' => $row["debit"] == '' ? '' : (int)$row["debit"],
+                'Uang Keluar' => $row["credit"] == '' ? '' : (int)$row["credit"],
+                'Saldo' => $row["balance"],
+            ];
+        };
+
+        $this->generateExcelReport($exportRows, $columns, $id);
+
+        return response()->download(storage_path('app/public/' . $id), "kas-report.xlsx");
+    }
 }

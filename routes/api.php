@@ -142,6 +142,7 @@ Route::middleware('auth:sanctum')
                         Route::post('report-auction', [ReportController::class, 'reportAuction']);
                         Route::post('report-bank', [ReportController::class, 'reportBank']);
                         Route::post('report-gl', [ReportController::class, 'reportGl']);
+                        Route::post('report-kas', [ReportController::class, 'reportKas']);
                     });
             });
     });

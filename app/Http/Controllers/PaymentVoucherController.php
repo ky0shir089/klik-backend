@@ -140,7 +140,7 @@ class PaymentVoucherController extends Controller
                             ];
                         }
 
-                        if (isset($detail->ppn_rate)) {
+                        if ($detail->ppn_rate > 0) {
                             $ppnAmount = $detail->item_amount * ($detail->ppn_rate / 100);
 
                             $debit2 = [
