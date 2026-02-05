@@ -173,7 +173,7 @@ class ReportController extends Controller
         ];
 
         $headerBank = [
-            'date' => isset($gl) ? $gl[0]->coa->description : $data[0]->coa->description,
+            'date' => count($gl) > 0 ? $gl[0]->coa->description : $data[0]->coa->description,
             'description' => '',
             'gl_no' => '',
             'debit' => '',

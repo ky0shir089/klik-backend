@@ -13,7 +13,7 @@
 <body>
     <div class="min-h-screen p-6">
         <div>
-            <img src="{{ storage_path('app/public/images/klik_logo2.svg') }}" alt=""
+            <img src="{{ storage_path('app/public/images/klik_logo2.svg') }}" alt="logo"
                 style="height: 100px; float:left;" />
 
             <h1 class="text-3xl font-medium text-center">Memo Invoice</h1>
