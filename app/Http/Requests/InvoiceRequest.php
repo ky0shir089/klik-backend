@@ -29,7 +29,9 @@ class InvoiceRequest extends FormRequest
             'payment_method' => ['required', 'string'],
             'supplier_account_id' => ['nullable', 'numeric', 'exists:supplier_accounts,id'],
             'description' => ['required', 'string'],
-            'attachment' => ["nullable", File::types(['pdf'])->max(1024)],
+            'attachment' => $this->status !== 'REQUEST'
+                ? ['nullable']
+                : ['nullable', File::types(['pdf'])->max(1024)],
             'created_by' => ['numeric', 'exists:users,id'],
             'updated_by' => ['nullable', 'numeric', 'exists:users,id'],
         ];
