@@ -29,7 +29,7 @@ class GeneralLedgerController extends Controller
             ->when($request->search, function ($query, $search) {
                 $query->where("gl_no", "ilike", "%$search%");
             })
-            ->groupBy("gl_no", "date", "description", "created_by")
+            ->groupBy("gl_no", "date", "description")
             ->orderBy("gl_no", "asc")
             ->paginate($request->size);
 
@@ -59,8 +59,10 @@ class GeneralLedgerController extends Controller
 
         try {
             $year = Carbon::parse($request->date)->format('y');
-            $seq = GL::query()
+            $seq = GL::select("gl_no")
                 ->where('gl_no', 'like', 'JV%' . $year . '%')
+                ->groupBy("gl_no")
+                ->get()
                 ->count();
 
             $gl_no = 'JV' . $year . Str::padLeft($seq + 1, 5, '0');
@@ -114,7 +116,7 @@ class GeneralLedgerController extends Controller
 
         $query = GL::select("gl_no", "date", "description")
             ->where("gl_no", $request->gl_no)
-            ->groupBy("gl_no", "date", "description", "created_by")
+            ->groupBy("gl_no", "date", "description")
             ->first();
 
         $details = GL::query()
