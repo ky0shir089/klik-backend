@@ -313,7 +313,7 @@ class ReportController extends Controller
                     'Keterangan' => $gl->description,
                     'Kode Akun' => $coa->code,
                     'No Jurnal' => $gl->gl_no,
-                    'Tanggal' => $gl->date,
+                    'Tanggal' => Carbon::parse($gl->date)->format('d-m-Y'),
                     'Debit' => $gl->debit,
                     'Credit' => $gl->credit,
                     'Balance' => ''

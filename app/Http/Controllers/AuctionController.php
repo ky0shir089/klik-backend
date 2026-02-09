@@ -64,6 +64,13 @@ class AuctionController extends Controller
             'date_start' => $request->auction_date,
             'date_end' => $request->auction_date,
         ]);
+        
+        if (!isset($response["data"])) {
+            return response()->json([
+                "success" => false,
+                "message" => $response["api_message"],
+            ]);
+        }
 
         $results = $response["data"] ?? [];
 
