@@ -12,12 +12,7 @@
 
 <body>
     <div class="min-h-screen p-6">
-        <div>
-            <img src="{{ storage_path('app/public/images/klik_logo2.svg') }}" alt="logo"
-                style="height: 100px; float:left;" />
-
-            <h1 class="text-3xl font-medium text-center">Memo Invoice</h1>
-        </div>
+        <h1 class="text-3xl font-medium text-center">Memo Invoice</h1>
 
         <br /><br />
 
@@ -132,26 +127,21 @@
             <thead>
                 <tr>
                     <th>Mengajukan,</th>
-                    <th>Mengetahui,</th>
-                    <th>Menyetujui,</th>
+                    <th colspan="2">Mengetahui,</th>
+                    <th colspan="2">Menyetujui,</th>
                 </tr>
             </thead>
+
+            <tbody>
+                <tr class="text-center">
+                    <td style="height: 200px;font-weight: bold">({{ $invoice->user->name }})</td>
+                    <td style="height: 200px;">(..............................)</td>
+                    <td style="height: 200px;">(..............................)</td>
+                    <td style="height: 200px;">(..............................)</td>
+                    <td style="height: 200px;">(..............................)</td>
+                </tr>
+            </tbody>
         </table>
-
-        <br />
-
-        <div class="mt-14">
-            <table class="w-full">
-                <tbody>
-                    <tr class="text-center">
-                        <td>(..............................)</td>
-                        <td>(..............................)</td>
-                        <td>(..............................)</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-
     </div>
 </body>
 

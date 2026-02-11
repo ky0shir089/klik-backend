@@ -20,7 +20,8 @@ class MemoInvoiceController extends Controller
             "supplier_account.bank",
             "details",
             "details.coa",
-            "details.pph"
+            "details.pph",
+            "user:id,name"
         ]);
 
         $slug = Str::slug($invoice->invoice_no);

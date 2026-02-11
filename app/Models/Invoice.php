@@ -31,7 +31,6 @@ class Invoice extends Model
     ];
 
     protected $hidden = [
-        'created_by',
         'updated_by',
         'created_at',
         'updated_at',
@@ -65,5 +64,10 @@ class Invoice extends Model
     public function attachment(): BelongsTo
     {
         return $this->belongsTo(FileUpload::class, 'file_upload_id', 'id');
+    }
+
+     public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by', 'id');
     }
 }
