@@ -26,6 +26,17 @@ class MemoInvoiceController extends Controller
 
         $slug = Str::slug($invoice->invoice_no);
 
+        $username = strtoupper($invoice->user->name);
+        $splitName = explode(" ", $username);
+        if (count($splitName) >= 3) {
+            $alias = $splitName[0][0] . $splitName[1][0] . $splitName[2][0];
+        } elseif (count($splitName) == 2) {
+            $alias = $splitName[0][0] . $splitName[1][0] . $splitName[1][1];
+        } else {
+            $alias = substr($username, 0, 3);
+        }
+
+
         $data = [
             'invoice' => $invoice,
             'invoice_no' => $invoice->invoice_no,
@@ -33,6 +44,7 @@ class MemoInvoiceController extends Controller
             'sum_amount' => $invoice->details->sum('item_amount'),
             'sum_pph' => $invoice->details->sum('pph_amount'),
             'sum_ppn' => $invoice->details->sum('ppn_amount'),
+            'alias' => $alias,
         ];
 
         return Pdf::loadView('invoice', $data)->download("memo-{$slug}.pdf");

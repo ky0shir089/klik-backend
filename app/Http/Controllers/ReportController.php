@@ -87,6 +87,7 @@ class ReportController extends Controller
             ->whereHas("auction", function ($query) use ($from, $to) {
                 $query->whereBetween("auction_date", [$from, $to]);
             })
+            ->oldest("id")
             ->get();
 
         $columns = function ($row) {
@@ -122,8 +123,8 @@ class ReportController extends Controller
                 'Selisih' => $row->diff_price,
                 'Nomor Paket' => $row->package_number,
                 'Nomor Kontrak' => $row->contract_number,
-                'No PV' => $row->spp?->detail->pv->pv_no,
-                'Tgl PV' => $row->spp?->detail->pv->paid_date,
+                'No PV' => $row->spp?->detail?->pv?->pv_no,
+                'Tgl PV' => $row->spp?->detail?->pv?->paid_date,
             ];
         };
 

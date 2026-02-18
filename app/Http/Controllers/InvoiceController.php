@@ -11,6 +11,7 @@ use App\Models\Invoice;
 use App\Models\InvoiceDetail;
 use App\Models\Pph;
 use App\Services\FileUploadService;
+use App\Services\FonnteService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -154,6 +155,8 @@ class InvoiceController extends Controller
             $sql->save();
 
             InvoiceDetail::insert($details);
+
+            (new FonnteService($sql));
 
             DB::commit();
         } catch (\Throwable $th) {

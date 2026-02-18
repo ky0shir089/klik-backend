@@ -134,7 +134,7 @@
 
             <tbody>
                 <tr class="text-center">
-                    <td style="height: 200px;font-weight: bold">({{ $invoice->user->name }})</td>
+                    <td style="height: 200px;font-weight: bold">({{ $alias }})</td>
                     <td style="height: 200px;">(..............................)</td>
                     <td style="height: 200px;">(..............................)</td>
                     <td style="height: 200px;">(..............................)</td>
