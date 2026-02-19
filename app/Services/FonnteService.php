@@ -21,7 +21,7 @@ class FonnteService
             "Deskripsi: {$invoice->description}\n" .
             "Amount: " .  Number::format($invoice->total_amount) . "\n" .
             "Created By: {$detail->user->name}\n\n" .
-            "Link: http://localhost:3000/finance/approval-invoice/{$invoice->id}";
+            "Link: https://klik-lelang.vercel.app/finance/approval-invoice/{$invoice->id}";
 
         $alldata = [
             [
