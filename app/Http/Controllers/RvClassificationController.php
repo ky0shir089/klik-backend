@@ -202,12 +202,14 @@ class RvClassificationController extends Controller
         $units = Unit::select("units.id", "price", "admin_fee", "final_price")
             ->join('auctions', 'units.auction_id', '=', 'auctions.klik_auction_id')
             ->whereIn("units.id", $request->units)
+            ->oldest("final_price")
             ->oldest("auction_date")
             ->oldest("id")
             ->get();
 
         $rvs = RV::select("id", "starting_balance", "used_balance", "admin_fee", "ending_balance")
             ->whereIn("id", $request->rvs)
+            ->oldest("ending_balance")
             ->oldest('date')
             ->oldest('id')
             ->get();
