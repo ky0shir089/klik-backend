@@ -239,8 +239,8 @@ class RvClassificationController extends Controller
                         $rv->used_balance += $rv->ending_balance;
                         $amountNeeded -= $rv->ending_balance;
                     } else {
-                        $rv->used_balance += $unit->price;
-                        $amountNeeded -= $unit->price;
+                        $rv->used_balance += $amountNeeded;
+                        $amountNeeded -= $amountNeeded;
                     }
 
                     $calculate = $rv->ending_balance - $unit->final_price;
@@ -255,7 +255,7 @@ class RvClassificationController extends Controller
                         "created_at" => now(),
                     ];
 
-                    $rv->admin_fee = $totalAdminFee == $adminBalance ? 0 : $rv->admin_fee + $unit->admin_fee;
+                    $rv->admin_fee = $totalAdminFee == $adminBalance ? $rv->admin_fee : $rv->admin_fee + $unit->admin_fee;
                     $diffBalance = $rv->starting_balance - $rv->used_balance - $rv->admin_fee;
                     if ($diffBalance < 0) {
                         $rv->used_balance += $diffBalance;
@@ -275,6 +275,7 @@ class RvClassificationController extends Controller
             }
 
             RvClassification::insert($classifications);
+
             foreach ($rvs as $rv) {
                 $rv->status = $rv->ending_balance == 0 ? "CLOSED" : "NEW";
                 $rv->updated_by = $authId;
