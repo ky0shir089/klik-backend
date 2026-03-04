@@ -169,11 +169,11 @@ class PaymentVoucherController extends Controller
                         ];
 
                         $ledger[] = $debit;
-                        if (isset($debit2)) {
+                        if ($ppnAmount > 0) {
                             $ledger[] = $debit2;
                         }
                         $ledger[] = $credit;
-                        if (isset($credit2)) {
+                        if ($pphAmount > 0) {
                             $ledger[] = $credit2;
                         }
                     }

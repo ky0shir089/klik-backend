@@ -1,0 +1,210 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Http\Resources\GetResource;
+use App\Http\Resources\UpdateResource;
+use App\Models\Spp;
+use App\Models\SppDetail;
+use App\Models\Unit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+
+class SppV2Controller extends Controller
+{
+    /**
+     * Display a listing of the resource.
+     */
+    public function index(Request $request)
+    {
+        if (!auth()->user()->tokenCan("spp:browse")) {
+            return response()->json([
+                "success" => false,
+                "message" => "Unauthorized",
+            ], 403);
+        }
+
+        $page = $request->page;
+        $rows = $request->rows;
+        $offset = ($page - 1) * $rows;
+
+        $response = Http::withHeaders([
+            'Authorization' => 'Bearer ' . config('services.klik')['token'],
+        ])->get('https://api.kliklelang.co.id/api/transaksi/v5/spp/list', [
+            'id_mst_status_spp' => 1,
+            'limit' => $rows,
+            'offset' => $offset,
+            'search' => $request->search,
+        ]);
+
+        if ($response->forbidden()) {
+            return response()->json([
+                "success" => false,
+                "message" => $response["api_message"],
+            ]);
+        }
+
+        $results["data"] = $response["data"];
+        $results["meta"] = [
+            "total" => $response["count"],
+            "limit" => (int) $rows,
+            "last_page" => ceil($response["count"] / $rows),
+            "offset" => $offset,
+        ];
+
+        return new GetResource($results);
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(Request $request)
+    {
+        //
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(Request $request)
+    {
+        if (!auth()->user()->tokenCan("spp:read")) {
+            return response()->json([
+                "success" => false,
+                "message" => "Unauthorized",
+            ], 403);
+        }
+
+        $response = Http::withHeaders([
+            'Authorization' => 'Bearer ' . config('services.klik')['token'],
+        ])->get('https://api.kliklelang.co.id/api/transaksi/v5/spp/detail/' . $request->spp);
+
+        if ($response->forbidden()) {
+            return response()->json([
+                "success" => false,
+                "message" => $response["api_message"],
+            ]);
+        }
+
+        $results = $response["data"];
+        $units = $results["spp_id_order"];
+        $files = $results["spp_files"];
+        $unitDetail = [];
+
+        foreach ($units as $unit) {
+            $mokas = Unit::with("auction")
+                ->where("klik_unit_id", $unit["id_motor_bekas"])
+                ->firstOrFail();
+            $price = $unit["harga_distribusi"] == 0 ? $unit["harga_spp"] : $unit["harga_distribusi"];
+            $mokas->contract_number = $unit["no_kontrak"];
+            $mokas->package_number = $results["nomor_paket"];
+            $mokas->distributed_price = $price;
+            $mokas->diff_price = $price - $mokas->price + $mokas->ticket_price;
+
+            $unitDetail[] = $mokas;
+        }
+
+        $sumPrice = collect($unitDetail)->sum("price");
+        $sumTicketPrice = collect($unitDetail)->sum("ticket_price");
+        $sumAdminFee = collect($unitDetail)->sum("admin_fee");
+        $sumFinalPrice = collect($unitDetail)->sum("final_price");
+        $sumDistributedPrice = collect($unitDetail)->sum("distributed_price");
+        $sumDiffPrice = collect($unitDetail)->sum("diff_price");
+
+        $data = [
+            "id" => $request->spp,
+            "sum_price" => $sumPrice,
+            "sum_ticket_price" => $sumTicketPrice,
+            "sum_admin_fee" => $sumAdminFee,
+            "sum_final_price" => $sumFinalPrice,
+            "sum_distributed_price" => $sumDistributedPrice,
+            "sum_diff_price" => $sumDiffPrice,
+            "customer_id" => $results["id_app_user"],
+            "branch_name" => $results["nama_cabang"],
+            "units" => $unitDetail,
+            "files" => $files,
+        ];
+
+        return new GetResource($data);
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request)
+    {
+        if (!auth()->user()->tokenCan("spp:edit")) {
+            return response()->json([
+                "success" => false,
+                "message" => "Unauthorized",
+            ], 403);
+        }
+
+        DB::transaction(function () use ($request) {
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . config('services.klik')['token'],
+            ])->post('https://api.kliklelang.co.id/api/transaksi/v5/siskeu/sync-status', [
+                'spp_id' => $request->spp_id,
+                'status' => $request->status,
+                'alasan' => $request->alasan,
+            ]);
+
+            if ($response->forbidden()) {
+                return response()->json([
+                    "success" => false,
+                    "message" => $response["api_message"],
+                ]);
+            }
+
+            if ($request->status !== "rejected") {
+                $units = collect($request->units);
+                $totalUnit = $units->count();
+                $totalAmount = $units->sum("distributed_price");
+                $authId = auth()->id();
+
+                $spp = new Spp();
+                $spp->customer_id = $request->customer_id;
+                $spp->branch_name = $request->branch_name;
+                $spp->total_unit = $totalUnit;
+                $spp->total_amount = $totalAmount;
+                $spp->created_by = $authId;
+                $spp->save();
+
+                foreach ($units as $unit) {
+                    $updateUnit = Unit::find($unit["id"]);
+                    $updateUnit->package_number = $unit["package_number"];
+                    $updateUnit->contract_number = $unit["contract_number"];
+                    $updateUnit->distributed_price = $unit["distributed_price"];
+                    $updateUnit->diff_price = $unit["distributed_price"] - $updateUnit->price + $updateUnit->ticket_price;
+                    $updateUnit->spp_status = "CREATED";
+                    $updateUnit->updated_by = $authId;
+                    $updateUnit->save();
+
+                    $details[] = [
+                        "spp_id" => $spp->id,
+                        "unit_id" => $updateUnit->id,
+                        "created_by" => $authId,
+                        "created_at" => now(),
+                        "updated_at" => null
+                    ];
+                }
+
+                SppDetail::insert($details);
+            }
+        });
+
+        return response()->json([
+            "success" => true,
+            "message" => "Spp status updated",
+        ]);
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(string $id)
+    {
+        //
+    }
+}

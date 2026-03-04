@@ -23,6 +23,7 @@ use App\Http\Controllers\RvController;
 use App\Http\Controllers\RvUploadController;
 use App\Http\Controllers\SelectController;
 use App\Http\Controllers\SppController;
+use App\Http\Controllers\SppV2Controller;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\TrxDetailController;
 use App\Http\Controllers\TypeTrxController;
@@ -110,6 +111,11 @@ Route::middleware('auth:sanctum')
                         Route::post('upload-spp', UploadSppController::class);
                         Route::get('memo-payment/{payment}', MemoPaymentController::class);
                         Route::resource('spp', SppController::class);
+                    });
+
+                Route::prefix('v2')
+                    ->group(function () {
+                        Route::resource('spp', SppV2Controller::class);
                     });
             });
 

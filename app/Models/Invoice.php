@@ -66,8 +66,12 @@ class Invoice extends Model
         return $this->belongsTo(FileUpload::class, 'file_upload_id', 'id');
     }
 
-     public function user(): BelongsTo
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by', 'id');
+    }
+    public function supplier(): BelongsTo
+    {
+        return $this->belongsTo(Supplier::class, 'supplier_id', 'id');
     }
 }

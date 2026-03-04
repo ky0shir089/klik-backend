@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\GetResource;
 use App\Http\Resources\StoreResource;
-use App\Models\Customer;
 use App\Models\Spp;
 use App\Models\SppDetail;
 use App\Models\Unit;
@@ -131,7 +130,7 @@ class SppController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Spp $spp)
+    public function update(Request $request)
     {
         //
     }

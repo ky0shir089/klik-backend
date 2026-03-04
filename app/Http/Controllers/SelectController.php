@@ -146,7 +146,7 @@ class SelectController extends Controller
         return new GetResource($query);
     }
 
-    public function unpaidPayment()
+    public function unpaidPayment(Request $request)
     {
         $query = PaymentVoucher::query()
             ->with([
@@ -158,6 +158,11 @@ class SelectController extends Controller
                 'supplier_account.bank',
             ])
             ->where("status", "NEW")
+            ->when($request->method == "KAS", function ($query) {
+                $query->where("payment_method", "KAS");
+            }, function ($query) {
+                $query->where("payment_method", "BANK");
+            })
             ->orderBy("id", "desc")
             ->get();
 

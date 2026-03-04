@@ -32,9 +32,9 @@ class InvoiceController extends Controller
 
         $query = Invoice::query()
             ->with([
-                "supplier_account",
-                "supplier_account.supplier",
-                "supplier_account.bank",
+                "supplier:id,name",
+                "supplier_account:id,account_number,bank_id",
+                "supplier_account.bank:id,name",
                 "type_trx",
             ])
             ->when(auth()->user()->role->id == 3, function ($query) {
@@ -70,9 +70,9 @@ class InvoiceController extends Controller
 
         $query = Invoice::query()
             ->with([
-                "supplier_account",
-                "supplier_account.supplier",
-                "supplier_account.bank",
+                "supplier:id,name",
+                "supplier_account:id,account_number,bank_id",
+                "supplier_account.bank:id,name",
                 "type_trx",
             ])
             ->where("status", "REQUEST")
