@@ -29,6 +29,7 @@ class SppV2Controller extends Controller
         $rows = $request->rows;
         $offset = ($page - 1) * $rows;
 
+        //prod
         $response = Http::withHeaders([
             'Authorization' => 'Bearer ' . config('services.klik')['token'],
         ])->get('https://api.kliklelang.co.id/api/transaksi/v5/spp/list', [
@@ -37,6 +38,16 @@ class SppV2Controller extends Controller
             'offset' => $offset,
             'search' => $request->search,
         ]);
+
+        //dev
+        // $response = Http::withHeaders([
+        //     'Authorization' => 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJjbGllbnRfaWQiOjE1NTM0LCJjbGllbnRfcGxhdGZvcm0iOiJtb2JpbGUiLCJjbGllbnRfcm9sZSI6ImJhbGFuZyIsImNsaWVudF90eXBlIjoiaGVhZG9mZmljZSIsImV4cCI6MTc3NDE3MDE2Mn0.7z0DOfonq1UFGpMWNUBtNglxiSGYjKU0xlnmJ9nCagQ',
+        // ])->get('https://api.devlmu.com/kliklelang/transaksi/api/transaksi/v5/spp/list', [
+        //     'id_mst_status_spp' => 1,
+        //     'limit' => $rows,
+        //     'offset' => $offset,
+        //     'search' => $request->search,
+        // ]);
 
         if ($response->forbidden()) {
             return response()->json([
@@ -76,9 +87,15 @@ class SppV2Controller extends Controller
             ], 403);
         }
 
+        //prod
         $response = Http::withHeaders([
             'Authorization' => 'Bearer ' . config('services.klik')['token'],
-        ])->get('https://api.kliklelang.co.id/api/transaksi/v5/spp/detail/' . $request->spp);
+        ])->get('https://api.kliklelang.co.id/api/transaksi/v5/spp/detail/' . $request->sppV2);
+
+        //dev
+        // $response = Http::withHeaders([
+        //     'Authorization' => 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJjbGllbnRfaWQiOjE1NTM0LCJjbGllbnRfcGxhdGZvcm0iOiJtb2JpbGUiLCJjbGllbnRfcm9sZSI6ImJhbGFuZyIsImNsaWVudF90eXBlIjoiaGVhZG9mZmljZSIsImV4cCI6MTc3NDE3MDE2Mn0.7z0DOfonq1UFGpMWNUBtNglxiSGYjKU0xlnmJ9nCagQ',
+        // ])->get('https://api.devlmu.com/kliklelang/transaksi/api/transaksi/v5/spp/detail/' . $request->sppV2);
 
         if ($response->forbidden()) {
             return response()->json([
@@ -113,7 +130,7 @@ class SppV2Controller extends Controller
         $sumDiffPrice = collect($unitDetail)->sum("diff_price");
 
         $data = [
-            "id" => $request->spp,
+            "id" => $request->sppV2,
             "sum_price" => $sumPrice,
             "sum_ticket_price" => $sumTicketPrice,
             "sum_admin_fee" => $sumAdminFee,
@@ -142,6 +159,7 @@ class SppV2Controller extends Controller
         }
 
         DB::transaction(function () use ($request) {
+            //prod
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer ' . config('services.klik')['token'],
             ])->post('https://api.kliklelang.co.id/api/transaksi/v5/siskeu/sync-status', [
@@ -149,6 +167,15 @@ class SppV2Controller extends Controller
                 'status' => $request->status,
                 'alasan' => $request->alasan,
             ]);
+
+            //dev
+            // $response = Http::withHeaders([
+            //     'Authorization' => 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJjbGllbnRfaWQiOjE1NTM0LCJjbGllbnRfcGxhdGZvcm0iOiJtb2JpbGUiLCJjbGllbnRfcm9sZSI6ImJhbGFuZyIsImNsaWVudF90eXBlIjoiaGVhZG9mZmljZSIsImV4cCI6MTc3NDE3MDE2Mn0.7z0DOfonq1UFGpMWNUBtNglxiSGYjKU0xlnmJ9nCagQ',
+            // ])->post('https://api.devlmu.com/kliklelang/transaksi/api/transaksi/v5/siskeu/sync-status', [
+            //     'spp_id' => $request->spp_id,
+            //     'status' => $request->status,
+            //     'alasan' => $request->alasan,
+            // ]);
 
             if ($response->forbidden()) {
                 return response()->json([

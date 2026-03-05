@@ -115,7 +115,9 @@ Route::middleware('auth:sanctum')
 
                 Route::prefix('v2')
                     ->group(function () {
-                        Route::resource('spp', SppV2Controller::class);
+                        Route::get('spp-v2', [SppV2Controller::class, 'index']);
+                        Route::get('spp-v2/{sppV2}', [SppV2Controller::class, 'show']);
+                        Route::post('spp-v2/sync-status', [SppV2Controller::class, 'syncStatus']);
                     });
             });
 
