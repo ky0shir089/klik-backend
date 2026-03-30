@@ -13,6 +13,7 @@ use App\Models\Customer;
 use App\Models\GL;
 use App\Models\RV;
 use App\Models\Unit;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -72,8 +73,31 @@ class RvController extends Controller
         DB::beginTransaction();
 
         try {
-            $year = date('y');
-            $rv_no = 'RV' . $year . Str::padLeft(RV::count() + 1, 5, '0');
+            $currentYear = date('y');
+            $findLastRvDate = RV::select("date")->latest()->first();
+            $lastRvDate = $findLastRvDate->date ?? now();
+            $lastRvYear = Carbon::parse($lastRvDate)->format('y');
+            if ($currentYear > $lastRvYear) {
+                $countRv = 1;
+            } else {
+                $countRv = RV::query()
+                    ->where("date", ">=", date('Y') . "-01-01")
+                    ->where("date", "<=", date('Y') . "-12-31")
+                    ->count() + 1;
+            }
+            $rvNo = 'RV' . $currentYear;
+            $rv_no = $rvNo . Str::padLeft($countRv++, 5, '0');
+
+            $checkDuplicate = RV::select("rv_no")
+                ->where("rv_no", $rv_no)
+                ->count();
+
+            while ($checkDuplicate > 0) {
+                $rv_no = $rvNo . Str::padLeft($countRv++, 5, '0');
+                $checkDuplicate = RV::select("rv_no")
+                    ->where("rv_no", $rv_no)
+                    ->count();
+            }
 
             $sql = RV::create($request->validated() + [
                 'rv_no' => $rv_no,
@@ -88,7 +112,7 @@ class RvController extends Controller
                 "type" => 'IN',
                 "description" => $request->description,
                 "created_by" => auth()->id(),
-                "updated_at" => null,
+                "created_at" => now(),
             ];
 
             $debit = [
@@ -117,7 +141,7 @@ class RvController extends Controller
 
             return response()->json([
                 "success" => false,
-                "message" => $th->getMessage(),
+                "message" => "Internal Server Error",
             ], 500);
         }
     }
