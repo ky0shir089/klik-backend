@@ -48,7 +48,7 @@ class InvoiceController extends Controller
                 ], "ilike", "%$search%");
             })
             ->when($request->type_trx_id, function ($query, $type_trx_id) {
-                $query->where("type_trx_id", $type_trx_id);
+                $query->where("trx_id", $type_trx_id);
             })
             ->when($request->method, function ($query, $method) {
                 $query->where("payment_method", $method);
