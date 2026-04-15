@@ -9,7 +9,6 @@ use App\Http\Resources\StoreResource;
 use App\Http\Resources\UpdateResource;
 use App\Models\Auction;
 use App\Models\Customer;
-use App\Models\CustomerAuction;
 use App\Models\Transaction;
 use App\Models\Unit;
 use Illuminate\Http\Request;
@@ -58,13 +57,22 @@ class AuctionController extends Controller
             ], 403);
         }
 
+        //prod
         $response = Http::withHeaders([
             'Authorization' => 'Bearer ' . config('services.klik')['token'],
         ])->get('https://api.kliklelang.co.id/api/report/v3/hasil_lelang', [
             'date_start' => $request->auction_date,
             'date_end' => $request->auction_date,
         ]);
-        
+
+        //dev
+        // $response = Http::withHeaders([
+        //     'Authorization' => 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJjbGllbnRfaWQiOjE1NDkyLCJjbGllbnRfcGxhdGZvcm0iOiJtb2JpbGUiLCJjbGllbnRfcm9sZSI6InVzZXIiLCJjbGllbnRfdHlwZSI6InJlZ3VsZXIiLCJleHAiOjIwODYxNjE3NDN9.y5hCDLImOq_IdjhysSMGYWjUJTn-YSkff-0zZ-5OdQ8',
+        // ])->get('https://api.devlmu.com/kliklelang/report/api/report/v3/hasil_lelang', [
+        //     'date_start' => $request->auction_date,
+        //     'date_end' => $request->auction_date,
+        // ]);
+
         if (!isset($response["data"])) {
             return response()->json([
                 "success" => false,
@@ -137,9 +145,11 @@ class AuctionController extends Controller
                 }
             }
 
+            $uniqueUnits = collect($units)->reverse()->unique("klik_unit_id")->reverse()->values()->toArray();
+
             Customer::upsert($customers, ["klik_bidder_id"]);
             Auction::upsert($auctions, ["customer_id", "klik_auction_id"]);
-            Unit::upsert($units, ["klik_unit_id"]);
+            Unit::upsert($uniqueUnits, ["klik_unit_id"]);
             Transaction::insert($transactions);
 
             DB::commit();
