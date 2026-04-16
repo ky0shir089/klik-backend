@@ -5,9 +5,9 @@ use App\Http\Controllers\AuctionCustomerController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BankAccountController;
 use App\Http\Controllers\BankController;
-use App\Http\Controllers\ByadAttachmentController;
-use App\Http\Controllers\ByadController;
-use App\Http\Controllers\ByadPaymentController;
+// use App\Http\Controllers\ByadAttachmentController;
+// use App\Http\Controllers\ByadController;
+// use App\Http\Controllers\ByadPaymentController;
 use App\Http\Controllers\ChartOfAccountController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\GeneralLedgerController;
@@ -117,9 +117,9 @@ Route::middleware('auth:sanctum')
                         Route::post('upload-spp', UploadSppController::class);
                         Route::get('memo-payment/{payment}', MemoPaymentController::class);
                         Route::resource('spp', SppController::class);
-                        Route::resource('byad', ByadController::class);
-                        Route::resource('byad-payment', ByadPaymentController::class);
-                        Route::get('byad-attachment/{byad}', ByadAttachmentController::class);
+                        // Route::resource('byad', ByadController::class);
+                        // Route::resource('byad-payment', ByadPaymentController::class);
+                        // Route::get('byad-attachment/{byad}', ByadAttachmentController::class);
                     });
 
                 Route::prefix('v2')
