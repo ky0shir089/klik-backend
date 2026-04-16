@@ -60,7 +60,7 @@ class SppV2Controller extends Controller
         $results["meta"] = [
             "total" => $response["count"],
             "limit" => (int) $rows,
-            "last_page" => ceil($response["count"] / $rows),
+            "last_page" => round($response["count"] / $rows),
             "offset" => $offset,
         ];
 
@@ -131,14 +131,16 @@ class SppV2Controller extends Controller
 
         $data = [
             "id" => $request->sppV2,
+            "customer_id" => $results["id_app_user"],
+            "bidder_name" => $results["nama_bidder"],
+            "branch_name" => $results["nama_cabang"],
+            "package_number" => $results["nomor_paket"],
             "sum_price" => $sumPrice,
             "sum_ticket_price" => $sumTicketPrice,
             "sum_admin_fee" => $sumAdminFee,
             "sum_final_price" => $sumFinalPrice,
             "sum_distributed_price" => $sumDistributedPrice,
             "sum_diff_price" => $sumDiffPrice,
-            "customer_id" => $results["id_app_user"],
-            "branch_name" => $results["nama_cabang"],
             "units" => $unitDetail,
             "files" => $files,
         ];
