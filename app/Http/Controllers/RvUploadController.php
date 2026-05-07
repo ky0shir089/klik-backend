@@ -62,7 +62,7 @@ class RvUploadController extends Controller
             '*.payment_date' => 'required',
             '*.journal_number' => [
                 'required',
-                Rule::unique('received_vouchers', 'jounal_number')->where('payment_date', $this->input('payment_date')),
+                Rule::unique('receive_vouchers', 'journal_number')->where('date', $request->input('payment_date')),
             ],
             '*.starting_balance' => 'required',
         ], [
