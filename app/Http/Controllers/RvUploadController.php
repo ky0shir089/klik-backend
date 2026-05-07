@@ -2,18 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Auction;
-use App\Models\AuctionCustomer;
 use App\Models\Customer;
 use App\Models\GL;
 use App\Models\RV;
-use App\Models\RvClassification;
 use App\Services\FileUploadService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Rap2hpoutre\FastExcel\FastExcel;
 
 use function Symfony\Component\Clock\now;
@@ -62,7 +60,10 @@ class RvUploadController extends Controller
             '*.va_number' => 'required',
             '*.customer_name' => 'required',
             '*.payment_date' => 'required',
-            '*.journal_number' => 'required|unique:receive_vouchers,journal_number',
+            '*.journal_number' => [
+                'required',
+                Rule::unique('received_vouchers', 'jounal_number')->where('payment_date', $this->input('payment_date')),
+            ],
             '*.starting_balance' => 'required',
         ], [
             '*.description.required' => 'Baris #:position: VA Number Kosong',
