@@ -10,8 +10,15 @@ use App\Http\Resources\UpdateResource;
 use App\Models\Invoice;
 use App\Models\InvoiceDetail;
 use App\Models\Pph;
+use App\Models\RV;
+use App\Models\Settlement;
+use App\Models\WorkflowApproval;
+use App\Models\WorkflowHistory;
+use App\Services\LpjService;
 use App\Services\FileUploadService;
 use App\Services\FonnteService;
+use App\Services\WorkflowService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -69,21 +76,30 @@ class InvoiceController extends Controller
         }
 
         $query = Invoice::query()
+            ->select('invoices.*')
             ->with([
                 "supplier:id,name",
                 "supplier_account:id,account_number,bank_id",
                 "supplier_account.bank:id,name",
                 "type_trx",
             ])
-            ->where("status", "REQUEST")
+            ->join('workflow_approvals', function ($join) {
+                $join->on('invoices.id', 'workflow_approvals.processable_id')
+                    ->where('workflow_approvals.processable_type', Invoice::class);
+            })
+            ->whereRelation("wf_histories", function ($query) {
+                $query->where("user_id", auth()->id())
+                    ->where("status", "PENDING")
+                    ->whereRaw('workflow_histories.sequence = workflow_approvals.approve_count + 1');
+            })
             ->when($request->search, function ($query, $search) {
                 $query->whereAny([
                     "invoice_no",
                     "description",
-                    "amount",
+                    "total_amount",
                 ], "ilike", "%$search%");
             })
-            ->latest()
+            ->latest("invoices.created_at")
             ->paginate($request->size);
 
         return new GetResource($query);
@@ -104,9 +120,22 @@ class InvoiceController extends Controller
         DB::beginTransaction();
 
         try {
-            $year = date('y');
-            $invoice_no = 'KLIK/' . date("m") . '/' . $year . '/' . Str::padLeft(Invoice::count() + 1, 3, '0');
             $authId = auth()->id();
+
+            $currentYear = date('y');
+            $findLastInvDate = Invoice::select("created_at")->latest()->first();
+            $lastInvDate = $findLastInvDate->date ?? now();
+            $lastInvYear = Carbon::parse($lastInvDate)->format('y');
+            if ($currentYear > $lastInvYear) {
+                $countInv = 1;
+            } else {
+                $countInv = Invoice::query()
+                    ->whereNotNull("invoice_no")
+                    ->where("created_at", ">=", date('Y') . "-01-01")
+                    ->where("created_at", "<=", date('Y') . "-12-31")
+                    ->count() + 1;
+            }
+            $invoice_no = 'KLIK/' . date("m") . '/' . $currentYear . '/' . Str::padLeft($countInv++, 3, '0');
 
             if ($request->hasFile('attachment')) {
                 $file = (new FileUploadService)->handleUpload($request->file('attachment'));
@@ -119,44 +148,10 @@ class InvoiceController extends Controller
                 'updated_at' => null,
             ]);
 
-            $details = [];
-
-            foreach ($request->details as $detail) {
-                $pphAmount = 0;
-                $ppnAmount = 0;
-                if (isset($detail['pph_id'])) {
-                    $pph = Pph::find($detail['pph_id']);
-                    $pphAmount = round($detail['item_amount'] * $pph->rate / 100);
-                }
-                if (isset($detail['ppn_rate'])) {
-                    $ppnAmount = round($detail['item_amount'] * $detail['ppn_rate'] / 100);
-                }
-                $totalAmount = round($detail['item_amount'] - $pphAmount + $ppnAmount);
-
-
-                $details[] = [
-                    'invoice_id' => $sql->id,
-                    'inv_coa_id' => $detail['inv_coa_id'],
-                    'description' => $detail['description'],
-                    'item_amount' => $detail['item_amount'],
-                    'pph_id' => isset($detail['pph_id']) ? $detail['pph_id'] : null,
-                    'pph_amount' => $pphAmount,
-                    'ppn_rate' => $detail['ppn_rate'],
-                    'ppn_amount' => $ppnAmount,
-                    'rv_id' => isset($detail['rv_id']) ? $detail['rv_id'] : null,
-                    'total_amount' => $totalAmount,
-                    'created_by' => $authId,
-                    'created_at' => now(),
-                    'updated_at' => null,
-                ];
-            }
-
-            $sql->total_amount = collect($details)->sum("total_amount");
+            $sql->total_amount = $this->createInvoiceDetails($request->details, $sql, $authId);
             $sql->save();
 
-            InvoiceDetail::insert($details);
-
-            (new FonnteService($sql));
+            (new WorkflowService($sql));
 
             DB::commit();
         } catch (\Throwable $th) {
@@ -194,6 +189,11 @@ class InvoiceController extends Controller
             "details",
             "details.coa",
             "details.pph",
+            "details.rv:id,rv_no,ending_balance",
+            "wf_histories",
+            "wf_histories.user:id,name",
+            "settlement:lpj_invoice_id,prepayment_pv_id,prepayment_pv_id",
+            "settlement.pv:id,pv_no,pv_amount",
         ]));
     }
 
@@ -220,65 +220,20 @@ class InvoiceController extends Controller
 
             $invoice->update($request->safe()->except(["attachment"]) + [
                 'file_upload_id' => $file->id ?? $invoice->file_upload_id,
-                'status' => $request->status,
-                "signature" => $request->signature,
                 'updated_by' => $authId,
             ]);
 
-            if ($request->status == "REQUEST") {
-                $invoice->details()->delete();
-
-                $details = [];
-                $sumTotalAmount = 0;
-
-                foreach ($request->details as $detail) {
-                    $pphAmount = 0;
-                    $ppnAmount = 0;
-                    if (isset($detail['pph_id'])) {
-                        $pph = Pph::find($detail['pph_id']);
-                        $pphAmount = round($detail['item_amount'] * $pph->rate / 100);
-                    }
-                    if (isset($detail['ppn_rate'])) {
-                        $ppnAmount = round($detail['item_amount'] * $detail['ppn_rate'] / 100);
-                    }
-                    $totalAmount = round($detail['item_amount'] - $pphAmount + $ppnAmount);
-                    $sumTotalAmount += $totalAmount;
-
-                    $details[] = [
-                        'invoice_id' => $invoice->id,
-                        'inv_coa_id' => $detail['inv_coa_id'],
-                        'description' => $detail['description'],
-                        'item_amount' => $detail['item_amount'],
-                        'pph_id' => isset($detail['pph_id']) ? $detail['pph_id'] : null,
-                        'pph_amount' => $pphAmount,
-                        'ppn_rate' => $detail['ppn_rate'],
-                        'ppn_amount' => $ppnAmount,
-                        'rv_id' => isset($detail['rv_id']) ? $detail['rv_id'] : null,
-                        'total_amount' => $totalAmount,
-                        'created_by' => $authId,
-                        'created_at' => now(),
-                        'updated_at' => null,
-                    ];
-                }
-
-                $invoice->details()->insert($details);
-                $invoice->total_amount = $sumTotalAmount;
-                $invoice->save();
-            }
-
-            if ($request->status == "APPROVE") {
-                $invoice->pv()->create([
-                    "supplier_id" => $invoice->supplier_account->supplier->id,
-                    "supplier_account_id" => $invoice->payment_method == "BANK" ? $invoice->supplier_account_id : null,
-                    "pv_amount" => $invoice->total_amount,
-                    "status" => "NEW",
-                    "trx_dtl_id" => $invoice->trx_id,
-                    "created_by" => $authId,
-                ]);
-            }
-
-            if ($request->status == "CANCEL") {
-                $invoice->pv()->delete();
+            switch ($request->status) {
+                case 'REQUEST':
+                    $this->handleResubmit($request, $invoice, $authId);
+                    break;
+                case 'APPROVE':
+                case 'REJECT':
+                    $this->handleWorkflowAction($request, $invoice, $authId);
+                    break;
+                case 'CANCEL':
+                    $invoice->pv()->delete();
+                    break;
             }
 
             DB::commit();
@@ -286,13 +241,127 @@ class InvoiceController extends Controller
             return new UpdateResource($invoice);
         } catch (\Throwable $th) {
             info($th->getMessage());
-
             DB::rollback();
 
             return response()->json([
                 "success" => false,
                 "message" => $th->getMessage(),
             ], 400);
+        }
+    }
+
+    private function createInvoiceDetails(string $detailsJson, Invoice $invoice, int $authId): float
+    {
+        $details = [];
+        $sumTotalAmount = 0;
+
+        foreach (json_decode($detailsJson, true) as $detail) {
+            $pph = isset($detail['pph_id']) ? Pph::find($detail['pph_id']) : null;
+            $pphAmount = $pph ? round($detail['item_amount'] * ($pph->rate / 100)) : 0;
+            $ppnAmount = isset($detail['ppn_rate']) ? round($detail['item_amount'] * ($detail['ppn_rate'] / 100)) : 0;
+
+            $totalAmount = round($detail['item_amount'] - $pphAmount + $ppnAmount);
+            $sumTotalAmount += $totalAmount;
+
+            $details[] = [
+                'invoice_id' => $invoice->id,
+                'inv_coa_id' => $detail['inv_coa_id'],
+                'description' => $detail['description'],
+                'item_amount' => $detail['item_amount'],
+                'pph_id' => $detail['pph_id'] ?? null,
+                'pph_amount' => $pphAmount,
+                'ppn_rate' => $detail['ppn_rate'] ?? 0,
+                'ppn_amount' => $ppnAmount,
+                'rv_id' => $detail['rv_id'] ?? null,
+                'total_amount' => $totalAmount,
+                'created_by' => $authId,
+                'created_at' => now(),
+                'updated_at' => null,
+            ];
+
+            if ($detail["rv_id"]) {
+                RV::find($detail['rv_id'])->update(['status' => 'USED']);
+            }
+        }
+
+        InvoiceDetail::insert($details);
+        return (float) $sumTotalAmount;
+    }
+
+    private function handleResubmit(InvoiceRequest $request, Invoice $invoice, int $authId): void
+    {
+        $invoice->details()->delete();
+        $invoice->update(['total_amount' => $this->createInvoiceDetails($request->details, $invoice, $authId)]);
+
+        $invoice->wf_histories()->delete();
+        $invoice->wf_approval()->delete();
+
+        (new WorkflowService($invoice));
+    }
+
+    private function handleWorkflowAction(InvoiceRequest $request, Invoice $invoice, int $authId): void
+    {
+        $history = WorkflowHistory::findOrFail($request->wf_history_id);
+        $history->update([
+            'status' => $request->status,
+            'signature' => $request->signature,
+            'remark' => $request->remark
+        ]);
+
+        if ($request->status === 'REJECT') {
+            $invoice->update(['status' => 'REJECT']);
+            if ($invoice->payment_method === 'PREPAYMENT') {
+                Settlement::where("lpj_invoice_id", $invoice->id)
+                    ->update([
+                        'lpj_invoice_id' => null,
+                        'lpj_amount' => 0,
+                        'status' => 'NEW'
+                    ]);
+            }
+            return;
+        }
+
+        $approval = WorkflowApproval::where([
+            "processable_type" => Invoice::class,
+            "processable_id" => $invoice->id
+        ])
+            ->first();
+        $approval->increment("approve_count");
+
+        // Notify next person in sequence
+        $nextStep = WorkflowHistory::where([
+            "processable_type" => Invoice::class,
+            "processable_id" => $invoice->id,
+            "sequence" => $approval->approve_count + 1
+        ])
+            ->first();
+        if ($nextStep) {
+            (new FonnteService($invoice, $nextStep->user->phone));
+        }
+
+        // Finalize if all steps approved
+        $totalSteps = WorkflowHistory::where([
+            "processable_type" => Invoice::class,
+            "processable_id" => $invoice->id
+        ])
+            ->count();
+        if ($approval->approve_count === $totalSteps) {
+            $invoice->update(['status' => 'APPROVE']);
+            (new FonnteService($invoice, '6289518901400'));
+
+            if ($invoice->payment_method !== "PREPAYMENT") {
+                $invoice->pv()->create([
+                    "payment_method" => $invoice->payment_method,
+                    "supplier_id" => $invoice->supplier_id,
+                    "supplier_account_id" => ($invoice->payment_method === "BANK") ? $invoice->supplier_account_id : null,
+                    "pv_amount" => $invoice->total_amount,
+                    "status" => "NEW",
+                    "trx_dtl_id" => $invoice->trx_id,
+                    "created_by" => $authId,
+                ]);
+            } else {
+                (new LpjService($invoice));
+            }
         }
     }
 

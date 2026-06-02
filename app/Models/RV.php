@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOneThrough;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class RV extends Model
 {
@@ -23,6 +24,8 @@ class RV extends Model
         'ending_balance',
         'status',
         'customer_id',
+        'invoiceable_type',
+        'invoiceable_id',
         'created_by',
         'updated_by',
         'updated_at'
@@ -53,5 +56,15 @@ class RV extends Model
     public function used_rv(): HasOneThrough
     {
         return $this->HasOneThrough(Payment::class, PaymentRv::class, "rv_id", "id", "id", "payment_id");
+    }
+
+    public function classifications()
+    {
+        return $this->hasMany(RvClassification::class, 'rv_id', 'id');
+    }
+
+    public function invoiceable(): MorphTo
+    {
+        return $this->morphTo();
     }
 }

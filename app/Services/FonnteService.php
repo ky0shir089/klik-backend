@@ -10,7 +10,7 @@ class FonnteService
     /**
      * Create a new class instance.
      */
-    public function __construct($invoice)
+    public function __construct($invoice, $phone)
     {
         $detail = $invoice->load("type_trx:id,name", "user:id,name");
 
@@ -25,15 +25,10 @@ class FonnteService
 
         $alldata = [
             [
-                'target' => '6289518901400',
+                'target' => $phone,
                 'message' => $message,
                 'delay' => '1-3',
             ],
-            [
-                'target' => '6281221627372',
-                'message' => $message,
-                'delay' => '1-3',
-            ]
         ];
 
         $data = [

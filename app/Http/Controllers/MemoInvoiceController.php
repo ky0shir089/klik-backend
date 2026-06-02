@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Invoice;
+use App\Services\AliasService;
+use App\Services\SignatureSvgService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
@@ -21,21 +23,39 @@ class MemoInvoiceController extends Controller
             "details",
             "details.coa",
             "details.pph",
-            "user:id,name"
+            "user:id,name",
+            "wf_histories:processable_id,user_id,signature"
         ]);
 
         $slug = Str::slug($invoice->invoice_no);
 
         $username = strtoupper($invoice->user->name);
-        $splitName = explode(" ", $username);
-        if (count($splitName) >= 3) {
-            $alias = $splitName[0][0] . $splitName[1][0] . $splitName[2][0];
-        } elseif (count($splitName) == 2) {
-            $alias = $splitName[0][0] . $splitName[1][0] . $splitName[1][1];
-        } else {
-            $alias = substr($username, 0, 3);
+
+        $from = (new AliasService())->handle($username);
+
+        $wfHistories = $invoice->wf_histories;
+        $approvals = [];
+        foreach ($wfHistories as $wf) {
+            $wf->load("user:id,name");
+            $alias = (new AliasService())->handle(strtoupper($wf->user->name));
+            $points = json_decode($wf->signature, true);
+            if (isset($points)) {
+                $svg = (new SignatureSvgService())->generateSignatureSvg($points);
+                $html = '<img src="data:image/svg+xml;base64,' . base64_encode($svg) . '"  width="100" height="100" />';
+            } else {
+                $html = null;
+            }
+            $approvals[] = [
+                'name' => $alias,
+                'signature' => $html,
+            ];
         }
 
+        if (count($approvals) > 0) {
+            $to = $approvals[count($approvals) - 1]['name'];
+        } else {
+            $to = null;
+        }
 
         $data = [
             'invoice' => $invoice,
@@ -44,7 +64,9 @@ class MemoInvoiceController extends Controller
             'sum_amount' => $invoice->details->sum('item_amount'),
             'sum_pph' => $invoice->details->sum('pph_amount'),
             'sum_ppn' => $invoice->details->sum('ppn_amount'),
-            'alias' => $alias,
+            'from' => $from,
+            'to' => $to,
+            'approvals' => $approvals,
         ];
 
         return Pdf::loadView('invoice', $data)->download("memo-{$slug}.pdf");

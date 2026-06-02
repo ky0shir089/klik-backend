@@ -28,6 +28,7 @@ class TypeTrxRequest extends FormRequest
             'name' => ['required', 'string'],
             'in_out' => ['required', 'string', Rule::enum(TypeTrx::class)],
             'is_active' => ['required', 'boolean'],
+            'role_id' => ['nullable', 'integer', 'exists:roles,id'],
             'created_by' => ['integer', 'exists:users,id'],
             'updated_by' => ['nullable', 'integer', 'exists:users,id'],
         ];

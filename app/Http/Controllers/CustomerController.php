@@ -29,9 +29,21 @@ class CustomerController extends Controller
                     $query->where("payment_status", "UNPAID");
                 }
             ])
-            ->withSum("units", "price")
-            ->withSum("units", "admin_fee")
-            ->withSum("units", "final_price")
+            ->withSum([
+                "units" => function ($query) {
+                    $query->where("payment_status", "UNPAID");
+                }
+            ], "price")
+             ->withSum([
+                "units" => function ($query) {
+                    $query->where("payment_status", "UNPAID");
+                }
+            ], "admin_fee")
+             ->withSum([
+                "units" => function ($query) {
+                    $query->where("payment_status", "UNPAID");
+                }
+            ], "final_price")
             ->whereRelation("units", "payment_status", "UNPAID")
             ->when($request->search, function ($query, $search) {
                 $query->whereAny([
@@ -78,13 +90,13 @@ class CustomerController extends Controller
             "units.auction" => function ($query) {
                 $query->oldest("auction_date");
             },
-            "units.transactions",
             "rvs" => function ($query) {
                 $query->select("customer_id", "id", "rv_no", "date", "description", "ending_balance")
                     ->where("coa_id", 58)
                     ->where("ending_balance", ">", 0)
                     ->where("status", "NEW")
-                    ->oldest("date");
+                    ->oldest("date")
+                    ->oldest("id");
             },
         ]));
     }

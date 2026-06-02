@@ -7,9 +7,14 @@ use App\Http\Resources\DeleteResource;
 use App\Http\Resources\GetResource;
 use App\Http\Resources\StoreResource;
 use App\Http\Resources\UpdateResource;
+use App\Models\ByadDetail;
+use App\Models\ByadHeader;
+use App\Models\ByadPayment;
 use App\Models\GL;
 use App\Models\PaymentVoucher;
-use App\Models\Pph;
+use App\Models\RV;
+use App\Models\Settlement;
+use App\Models\Spp;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -41,6 +46,16 @@ class PaymentVoucherController extends Controller
                 'bank_account.bank',
             ])
             ->where("status", "PAID")
+            ->when($request->search, function ($query, $search) {
+                $query->whereAny([
+                    "pv_no",
+                    "description",
+                    "pv_amount",
+                ], "ilike", "%$search%")
+                    ->orWhereRelation("supplier", function ($query) use ($search) {
+                        $query->where("name", "ilike", "%$search%");
+                    });
+            })
             ->orderBy("id", "desc")
             ->paginate($request->size);
 
@@ -123,13 +138,19 @@ class PaymentVoucherController extends Controller
 
                     $ledger[] = $debit;
                     $ledger[] = $credit;
+
+                    $sppIds = $pv->processable->spps->load("spp")->pluck("spp.id");
+                    Spp::whereIn("id", $sppIds)->update([
+                        "status" => "PAID",
+                        "updated_at" => null
+                    ]);
                 } else {
                     foreach ($pv->processable->details as $detail) {
                         $pphAmount = 0;
                         $ppnAmount = 0;
 
                         if (isset($detail->pph_id)) {
-                            $pphAmount = $detail->item_amount * ($detail->pph->rate / 100);
+                            $pphAmount = round($detail->item_amount * ($detail->pph->rate / 100));
 
                             $credit2 = [
                                 ...$gl,
@@ -141,7 +162,7 @@ class PaymentVoucherController extends Controller
                         }
 
                         if ($detail->ppn_rate > 0) {
-                            $ppnAmount = $detail->item_amount * ($detail->ppn_rate / 100);
+                            $ppnAmount = round($detail->item_amount * ($detail->ppn_rate / 100));
 
                             $debit2 = [
                                 ...$gl,
@@ -176,6 +197,56 @@ class PaymentVoucherController extends Controller
                         if ($pphAmount > 0) {
                             $ledger[] = $credit2;
                         }
+
+                        if ($detail->rv_id) {
+                            $rv = RV::find($detail->rv_id);
+                            $rv->used_balance = $rv->used_balance + $detail->total_amount;
+                            $rv->ending_balance = $rv->ending_balance - $detail->total_amount;
+                            $rv->status = $rv->ending_balance == 0 ? "CLOSED" : "NEW";
+                            $rv->save();
+                        }
+                    }
+
+                    if ($pv->trx_dtl_id == 3) {
+                        $byadPayment = ByadPayment::where("invoice_id", $pv->processable_id)->first();
+                        $byadPayment->status = "PAID";
+                        $byadPayment->updated_by = $authId;
+                        $byadPayment->save();
+
+                        $byad_id = $byadPayment->details->pluck("byad_id");
+
+                        ByadHeader::whereIn("id", $byad_id)->update([
+                            "status" => "PAID",
+                            "updated_by" => $authId,
+                        ]);
+
+                        $byadDetail = ByadDetail::whereIn("byad_id", $byad_id)->get();
+                        foreach ($byadDetail as $detail) {
+                            $detail->unit()->update([
+                                "byad_status" => "PAID",
+                                "updated_by" => $authId,
+                            ]);
+                        }
+                    }
+
+                    $isPrepayment = collect($pv->processable->details)->hasSole(fn($item) => $item["inv_coa_id"] == 21);
+                    if ($isPrepayment) {
+                        $pv->processable->settlement()->insert([
+                            "prepayment_pv_id" => $pv->id,
+                            "prepayment_amount" => $pv->pv_amount,
+                            "balance" => $pv->pv_amount,
+                            "created_by" => $authId,
+                            "created_at" => now(),
+                            "updated_at" => null
+                        ]);
+                    }
+
+                    $isByhmd = collect($pv->processable->details)->hasSole(fn($item) => $item["inv_coa_id"] == 55);
+                    if ($isByhmd) {
+                        $settlement = Settlement::where('byhmd_invoice_id', $pv->processable_id)->first();
+                        $settlement->balance = 0;
+                        $settlement->status = "CLOSED";
+                        $settlement->save();
                     }
                 }
 

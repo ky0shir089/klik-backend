@@ -19,6 +19,7 @@ return new class extends Migration
             $table->boolean('change_password')->default(true);
             $table->string('ip_address')->nullable();
             $table->string('user_agent')->nullable();
+            $table->string('phone')->nullable();
             $table->timestamps();
         });
 

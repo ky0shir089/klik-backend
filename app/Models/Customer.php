@@ -17,6 +17,8 @@ class Customer extends Model
         'ktp',
         'name',
         'va_number',
+        'phone',
+        'address',
         'created_by',
         'updated_by',
         'updated_at'

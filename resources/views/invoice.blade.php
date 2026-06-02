@@ -31,12 +31,12 @@
                 <tr>
                     <th class="text-left">Kepada</th>
                     <td>:</td>
-                    <td></td>
+                    <td>{{ $to }}</td>
                 </tr>
                 <tr>
                     <th class="text-left">Dari</th>
                     <td>:</td>
-                    <td></td>
+                    <td>{{ $from }}</td>
                 </tr>
                 <tr>
                     <th class="text-left">Perihal</th>
@@ -127,18 +127,42 @@
             <thead>
                 <tr>
                     <th>Mengajukan,</th>
-                    <th colspan="2">Mengetahui,</th>
-                    <th colspan="2">Menyetujui,</th>
+                    @if (count($approvals) > 2)
+                        <th colspan="2">Mengetahui,</th>
+                        <th colspan="2">Menyetujui,</th>
+                    @else
+                        <th>Mengetahui,</th>
+                        <th>Menyetujui,</th>
+                    @endif
                 </tr>
             </thead>
 
             <tbody>
                 <tr class="text-center">
-                    <td style="height: 200px;font-weight: bold">({{ $alias }})</td>
-                    <td style="height: 200px;">(..............................)</td>
-                    <td style="height: 200px;">(..............................)</td>
-                    <td style="height: 200px;">(..............................)</td>
-                    <td style="height: 200px;">(..............................)</td>
+                    <td></td>
+                    @foreach ($approvals as $approval)
+                        <td>{!! $approval['signature'] !!}</td>
+                    @endforeach
+                </tr>
+
+                <tr class="text-center">
+                    @if (count($approvals) == 0)
+                        <td style="height:200px; font-weight: bold">({{ $from }})</td>
+                        <td style="height: 200px;">(..............................)</td>
+                        <td style="height: 200px;">(..............................)</td>
+                        <td style="height: 200px;">(..............................)</td>
+                        <td style="height: 200px;">(..............................)</td>
+                    @else
+                        <td style="font-weight: bold">({{ $from }})</td>
+                    @endif
+
+                    @foreach ($approvals as $approval)
+                        @if ($approval['signature'] == null)
+                            <td style="height: 200px; font-weight: bold">({{ $approval['name'] }})</td>
+                        @else
+                            <td style="font-weight: bold">({{ $approval['name'] }})</td>
+                        @endif
+                    @endforeach
                 </tr>
             </tbody>
         </table>

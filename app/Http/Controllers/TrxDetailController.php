@@ -27,7 +27,8 @@ class TrxDetailController extends Controller
         $query = TrxDtl::query()
             ->with(["trx", "coa"])
             ->when($request->search, function ($query, $search) {
-                $query->where("name", "ilike", "%$search%");
+                $query->whereRelation("trx", "name", "ilike", "%$search%")
+                    ->orWhereRelation("coa", "description", "ilike", "%$search%");
             })
             ->orderBy("id", "asc")
             ->paginate($request->size);

@@ -25,7 +25,7 @@ class TypeTrxController extends Controller
         }
 
         $query = TypeTrx::query()
-            ->with(["trx_dtl"])
+            ->with(["trx_dtl", "role:id,name"])
             ->when($request->search, function ($query, $search) {
                 $query->where("name", "ilike", "%$search%");
             })
@@ -50,7 +50,7 @@ class TypeTrxController extends Controller
         $sql = TypeTrx::create($request->validated() + [
             'created_by' => auth()->id(),
             'updated_at' => null,
-        ]);      
+        ]);
 
         return new StoreResource($sql);
     }

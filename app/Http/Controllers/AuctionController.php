@@ -14,6 +14,7 @@ use App\Models\Unit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 
 class AuctionController extends Controller
 {
@@ -97,6 +98,8 @@ class AuctionController extends Controller
                     'ktp' => $customer["identitas_ktp"],
                     'name' => $customer["nama_ktp"],
                     'va_number' => $customer["nomor_va"],
+                    'phone' => $customer["nomor_hp"],
+                    'address' => $customer["alamat_ktp"],
                     'created_by' => $authId,
                     'updated_at' => null
                 ];
@@ -114,6 +117,13 @@ class AuctionController extends Controller
                     ];
 
                     foreach ($lelang['unit'] as $unit) {
+                        $hargaTerbentuk = $unit['harga'] - $unit['potongan_tiket'];
+                        $byadAmount = round($hargaTerbentuk * 0.006);
+                        $feeAmount = round($hargaTerbentuk * 0.03);
+                        $pphAmount = round($feeAmount * 0.02);
+                        $netAmount = $feeAmount - $pphAmount;
+                        $pejabatLelang = Str::afterLast($lelang['detail_pejabat_lelang']['nama'], " ");
+
                         $units[] = [
                             'auction_id' => $lelang['id_lelang'],
                             'klik_unit_id' => $unit['id_unit'],
@@ -121,10 +131,20 @@ class AuctionController extends Controller
                             'police_number' => $unit['nopol'],
                             'chassis_number' => $unit['noka'],
                             'engine_number' => $unit['nosin'],
-                            'price' => $unit['harga'] - $unit['potongan_tiket'],
+                            'price' => $hargaTerbentuk,
                             'ticket_price' => $unit['potongan_tiket'],
                             'admin_fee' => $unit['biaya_admin'],
                             'final_price' => $unit['harga_total'],
+                            'byad_amount' => $byadAmount,
+                            'admin_amount' => $unit['biaya_admin'] - $byadAmount,
+                            'fee_amount' => $feeAmount,
+                            'pph_amount' => $pphAmount,
+                            'net_amount' => $netAmount,
+                            'pejabat_lelang' => $pejabatLelang,
+                            'brand' => $unit['merk'],
+                            'color' => $unit['warna'],
+                            'year' => $unit['tahun'],
+                            'no_lot' => $lelang['no_lot'],
                             'created_by' => $authId,
                             'updated_at' => null
                         ];

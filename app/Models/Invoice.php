@@ -5,7 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasOneThrough;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 
 class Invoice extends Model
@@ -35,6 +37,20 @@ class Invoice extends Model
         'created_at',
         'updated_at',
     ];
+
+    protected $casts = [
+        'trx_id' => 'integer',
+    ];
+
+    // public function resolveRouteBinding($value, $field = null)
+    // {
+    //     return $this->where($field ?? $this->getRouteKeyName(), $value)
+    //         ->where(function ($query) {
+    //             $query->where('trx_id', '!=', 3)
+    //                 ->orWhere('status', '!=', 'REQUEST');
+    //         })
+    //         ->firstOrFail();
+    // }
 
     public function supplier_account(): BelongsTo
     {
@@ -70,8 +86,24 @@ class Invoice extends Model
     {
         return $this->belongsTo(User::class, 'created_by', 'id');
     }
+
     public function supplier(): BelongsTo
     {
         return $this->belongsTo(Supplier::class, 'supplier_id', 'id');
+    }
+
+    public function wf_histories(): MorphMany
+    {
+        return $this->morphMany(WorkflowHistory::class, 'processable')->oldest("sequence");
+    }
+
+    public function wf_approval(): MorphOne
+    {
+        return $this->morphOne(WorkflowApproval::class, 'processable');
+    }
+
+    public function settlement(): HasOne
+    {
+        return $this->hasOne(Settlement::class, 'lpj_invoice_id', 'id');
     }
 }

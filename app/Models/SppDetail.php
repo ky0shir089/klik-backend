@@ -37,6 +37,6 @@ class SppDetail extends Model
 
     public function pv(): HasOneThrough
     {
-        return $this->HasOneThrough(PaymentVoucher::class, PaymentDetail::class, 'spp_id', 'id', 'spp_id', 'payment_id');
+        return $this->hasOneThrough(PaymentVoucher::class, PaymentDetail::class, 'spp_id', 'processable_id', 'spp_id', 'payment_id');
     }
 }

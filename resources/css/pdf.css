@@ -57,3 +57,23 @@
     font-size: 12px;
     line-height: 1.333333;
 }
+.fixed-width {
+    table-layout: fixed;
+    width: 100%;
+}
+.border-bottom {
+    border-bottom: 1px solid black;
+}
+.border-all {
+    border: 1px solid black;
+    padding: 4px;
+}
+.border-all-width {
+    border: 1px solid black;
+    padding: 4px;
+    display: inline-block;
+}
+
+.float-right {
+    float: right;
+}

@@ -27,6 +27,7 @@ return new class extends Migration
             $table->string("journal_number")->nullable();
             $table->string("status")->default("NEW");
             $table->foreignId("customer_id")->nullable()->constrained("customers", "klik_bidder_id")->cascadeOnDelete();
+            $table->morphs("invoiceable");
             $table->foreignId("created_by")->constrained("users")->cascadeOnDelete();
             $table->foreignId("updated_by")->nullable()->constrained("users")->cascadeOnDelete();
             $table->timestamps();
