@@ -3,8 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class TypeTrx extends Model
 {
@@ -15,6 +15,7 @@ class TypeTrx extends Model
         'name',
         'in_out',
         'is_active',
+        'role_id',
         'created_by',
         'updated_by',
         'updated_at'
@@ -30,5 +31,10 @@ class TypeTrx extends Model
     public function trx_dtl(): HasMany
     {
         return $this->HasMany(TrxDtl::class, "trx_id", "id");
+    }
+
+    public function role(): BelongsTo
+    {
+        return $this->belongsTo(Role::class, "role_id", "id");
     }
 }

@@ -30,6 +30,12 @@ class InvoiceRequest extends FormRequest
             'supplier_account_id' => ['nullable', 'numeric', 'exists:supplier_accounts,id'],
             'description' => ['required', 'string'],
             'attachment' => $this->status !== 'REQUEST' ? ['nullable'] : ["nullable", File::types(['pdf'])->max(1024)],
+            'details.*.inv_coa_id' => ['required', 'numeric', 'exists:chart_of_accounts,id'],
+            'details.*.description' => ['required', 'string'],
+            'details.*.item_amount' => ['required', 'numeric'],
+            'details.*.pph_id' => ['nullable', 'numeric', 'exists:pphs,id'],
+            'details.*.ppn_rate' => ['nullable', 'numeric'],
+            'details.*.rv_id' => ['nullable', 'numeric', 'exists:receive_vouchers,id'],
             'created_by' => ['numeric', 'exists:users,id'],
             'updated_by' => ['nullable', 'numeric', 'exists:users,id'],
         ];

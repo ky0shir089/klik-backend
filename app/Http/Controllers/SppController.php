@@ -29,6 +29,7 @@ class SppController extends Controller
                 "customer:klik_bidder_id,name",
             ])
             ->where("status", "NEW")
+            ->where("created_at", ">", "2026-01-01")
             ->when($request->search, function ($query, $search) {
                 $query->whereRelation("customer", "name", "ilike", "%$search%")
                     ->orWhere("branch_name", "ilike", "%$search%");

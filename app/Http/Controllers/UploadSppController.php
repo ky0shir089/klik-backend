@@ -75,9 +75,13 @@ class UploadSppController extends Controller
                 foreach ($collections as $rows) {
                     foreach ($rows as $item) {
                         $unit = Unit::query()
-                            ->where("police_number", $item["police_number"])
-                            ->orWhere("chassis_number", $item["chassis_number"])
-                            ->orWhere("engine_number", $item["engine_number"])
+                            ->where(function ($query) use ($item) {
+                                $query->where("police_number", $item["police_number"])
+                                    ->orWhere("chassis_number", $item["chassis_number"])
+                                    ->orWhere("engine_number", $item["engine_number"]);
+                            })
+                            ->whereNull("contract_number")
+                            ->whereNull("package_number")
                             ->first();
 
                         if ($unit) {

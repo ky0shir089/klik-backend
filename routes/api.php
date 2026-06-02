@@ -5,13 +5,15 @@ use App\Http\Controllers\AuctionCustomerController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BankAccountController;
 use App\Http\Controllers\BankController;
-// use App\Http\Controllers\ByadAttachmentController;
-// use App\Http\Controllers\ByadController;
-// use App\Http\Controllers\ByadPaymentController;
+use App\Http\Controllers\ByadAttachmentController;
+use App\Http\Controllers\ByadController;
+use App\Http\Controllers\ByadPaymentController;
 use App\Http\Controllers\ChartOfAccountController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\GeneralLedgerController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\InvoiceExternalController;
+use App\Http\Controllers\MemoExternalController;
 use App\Http\Controllers\MemoInvoiceController;
 use App\Http\Controllers\MemoPaymentController;
 use App\Http\Controllers\MenuController;
@@ -26,11 +28,13 @@ use App\Http\Controllers\RvController;
 use App\Http\Controllers\RvUploadController;
 use App\Http\Controllers\SelectController;
 use App\Http\Controllers\SettlementController;
+use App\Http\Controllers\SppAttachmentController;
 use App\Http\Controllers\SppController;
 use App\Http\Controllers\SppV2Controller;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\TrxDetailController;
 use App\Http\Controllers\TypeTrxController;
+use App\Http\Controllers\UnitController;
 use App\Http\Controllers\UploadRvController;
 use App\Http\Controllers\UploadSppController;
 use App\Http\Controllers\UserController;
@@ -98,6 +102,8 @@ Route::middleware('auth:sanctum')
                         Route::get('invoice-inbox', [InvoiceController::class, 'inbox']);
                         Route::get('memo-invoice/{invoice}', MemoInvoiceController::class);
                         Route::resource('settlement', SettlementController::class);
+                        Route::resource('invoice-external', InvoiceExternalController::class);
+                        Route::get('memo-external/{invoiceExternal}', MemoExternalController::class);
                     });
 
                 Route::prefix('v2')
@@ -117,9 +123,11 @@ Route::middleware('auth:sanctum')
                         Route::post('upload-spp', UploadSppController::class);
                         Route::get('memo-payment/{payment}', MemoPaymentController::class);
                         Route::resource('spp', SppController::class);
-                        // Route::resource('byad', ByadController::class);
-                        // Route::resource('byad-payment', ByadPaymentController::class);
-                        // Route::get('byad-attachment/{byad}', ByadAttachmentController::class);
+                        Route::resource('byad', ByadController::class);
+                        Route::resource('byad-payment', ByadPaymentController::class);
+                        Route::get('byad-attachment/{byad}', ByadAttachmentController::class);
+                        Route::get('spp-attachment/{payment}', SppAttachmentController::class);
+                        Route::resource('unit', UnitController::class);
                     });
 
                 Route::prefix('v2')
@@ -153,6 +161,10 @@ Route::middleware('auth:sanctum')
                         Route::get('byad', [SelectController::class, 'byad']);
                         Route::get('user', [SelectController::class, 'user']);
                         Route::get('prepayment', [SelectController::class, 'prepayment']);
+                        Route::get('paid-off-unit', [SelectController::class, 'PaidOffUnit']);
+                        Route::get('duplicate', [SelectController::class, 'findDuplicate']);
+                        Route::get('money-in-transit', [SelectController::class, 'moneyInTransit']);
+                        Route::get('external', [SelectController::class, 'external']);
                     });
             });
 
@@ -165,6 +177,10 @@ Route::middleware('auth:sanctum')
                         Route::post('report-bank', [ReportController::class, 'reportBank']);
                         Route::post('report-gl', [ReportController::class, 'reportGl']);
                         Route::post('report-kas', [ReportController::class, 'reportKas']);
+                        Route::post('report-invoice', [ReportController::class, 'reportInvoice']);
+                        Route::post('report-prepayment', [ReportController::class, 'reportPrepayment']);
+                        Route::post('list-unit-pelunasan', [ReportController::class, 'listUnitPelunasan']);
+                        Route::post('report-invoice-external', [ReportController::class, 'reportInvoiceExternal']);
                     });
             });
 

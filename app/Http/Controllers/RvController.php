@@ -2,17 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\CustomerRequest;
 use App\Http\Requests\RvRequest;
 use App\Http\Resources\DeleteResource;
 use App\Http\Resources\GetResource;
 use App\Http\Resources\StoreResource;
 use App\Http\Resources\UpdateResource;
-use App\Models\Auction;
-use App\Models\Customer;
 use App\Models\GL;
+use App\Models\Invoice;
+use App\Models\InvoiceExternal;
 use App\Models\RV;
-use App\Models\Unit;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -88,23 +86,7 @@ class RvController extends Controller
             $rvNo = 'RV' . $currentYear;
             $rv_no = $rvNo . Str::padLeft($countRv++, 5, '0');
 
-            $checkDuplicate = RV::select("rv_no")
-                ->where("rv_no", $rv_no)
-                ->count();
-
-            while ($checkDuplicate > 0) {
-                $rv_no = $rvNo . Str::padLeft($countRv++, 5, '0');
-                $checkDuplicate = RV::select("rv_no")
-                    ->where("rv_no", $rv_no)
-                    ->count();
-            }
-
-            $sql = RV::create($request->validated() + [
-                'rv_no' => $rv_no,
-                'ending_balance' => $request->starting_balance,
-                'created_by' => auth()->id(),
-                'updated_at' => null,
-            ]);
+            $ledgers = [];
 
             $gl = [
                 "gl_no" => $rv_no,
@@ -115,21 +97,62 @@ class RvController extends Controller
                 "created_at" => now(),
             ];
 
-            $debit = [
+            $type = null;
+            $startingBalance = $request->starting_balance;
+            $pph23 = 0;
+
+            if ($request->invoice_id) {
+                $invoice = Invoice::find($request->invoice_id);
+                if ($invoice) {
+                    $pph23 = round($request->starting_balance * 0.02);
+                    $isCashOpname = $invoice->details->hasSole(fn($item) => $item["inv_coa_id"] == 25);
+                    if ($isCashOpname) {
+                        $type = Invoice::class;
+                    }
+                }
+
+                $external = InvoiceExternal::find($request->invoice_id);
+                if ($external) {
+                    $pph23 = $external->pph23;
+                    $type = InvoiceExternal::class;
+                    $external->status = "CLOSE";
+                    $external->save();
+
+                    $startingBalance = $external->grand_total + $external->pph23;
+                }
+
+                $ledgers[] = [
+                    ...$gl,
+                    "coa_id" => 18,
+                    "debit" => $pph23,
+                    "credit" => 0,
+                ];
+            }
+
+            $sql = RV::create($request->validated() + [
+                'rv_no' => $rv_no,
+                'ending_balance' => $request->starting_balance,
+                'invoiceable_type' => $type,
+                'invoiceable_id' => $request->invoice_id,
+                'created_by' => auth()->id(),
+                'updated_at' => null,
+            ]);
+
+            $ledgers[] = [
                 ...$gl,
                 "coa_id" => $request->pay_method == "BANK" ? $sql->account->coa->id : 149,
-                "debit" => $request->starting_balance,
+                "debit" => $startingBalance - $pph23,
                 "credit" => 0,
             ];
 
-            $credit = [
+            $ledgers[] = [
                 ...$gl,
                 "coa_id" => $request->coa_id,
                 "debit" => 0,
-                "credit" => $request->starting_balance,
+                "credit" => $startingBalance,
             ];
 
-            GL::insert([$debit, $credit]);
+            GL::insert($ledgers);
 
             DB::commit();
 

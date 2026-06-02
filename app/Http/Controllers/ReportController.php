@@ -4,7 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\ChartOfAccount;
 use App\Models\GL;
+use App\Models\Invoice;
+use App\Models\InvoiceDetail;
+use App\Models\InvoiceExternal;
 use App\Models\RV;
+use App\Models\Settlement;
 use App\Models\Unit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -469,5 +473,203 @@ class ReportController extends Controller
         $this->generateExcelReport($exportRows, $columns, $id);
 
         return response()->download(storage_path('app/public/' . $id), "kas-report.xlsx");
+    }
+
+    public function reportInvoice(Request $request)
+    {
+        if (!auth()->user()->tokenCan("report-invoice:download")) {
+            return response()->json([
+                "success" => false,
+                "message" => "Unauthorized",
+            ], 403);
+        }
+
+        $id = "reports/invoice/" . Str::random(6) . ".xlsx";
+        $from = Carbon::parse($request->from);
+        $to = Carbon::parse($request->to);
+        $isAdminKlik = auth()->user()->role->id == 3;
+
+        $data = InvoiceDetail::query()
+            ->with([
+                "invoice",
+                "invoice.type_trx",
+                "invoice.supplier",
+                "invoice.supplier_account",
+                "invoice.supplier_account.bank",
+                "invoice.pv:processable_id,pv_no",
+                "invoice.user:id,name",
+            ])
+            ->whereHas("invoice", function ($query) use ($from, $to) {
+                $query->whereBetween("date", [$from, $to]);
+            })
+            ->when($isAdminKlik, function ($query) {
+                $query->whereHas("user", function ($query) {
+                    $query->whereHas("role", function ($query) {
+                        $query->where("roles.id", 3);
+                    });
+                });
+            })
+            ->oldest()
+            ->get();
+
+        $columns = function ($row) {
+            return [
+                'Invoice No' => $row->invoice->invoice_no,
+                'Date' => $row->invoice->date,
+                'Tipe Trx' => $row->invoice->type_trx->name,
+                'Supplier' => $row->invoice->supplier->name,
+                'Payment Method' => $row->invoice->payment_method,
+                'Bank' => $row->invoice->supplier_account->bank->name,
+                'Nomor Rekening' => $row->invoice->supplier_account->account_number,
+                'Description' => $row->description,
+                'Total Amount' => (int)$row->total_amount,
+                'Status' => $row->invoice->status,
+                'PV No' => $row->invoice->pv?->pv_no,
+                'Created By' => $row->invoice->user->name,
+            ];
+        };
+
+        $this->generateExcelReport($data, $columns, $id);
+
+        return response()->download(storage_path('app/public/' . $id), "invoice-report.xlsx");
+    }
+
+    public function reportPrepayment(Request $request)
+    {
+        if (!auth()->user()->tokenCan("report-prepayment:download")) {
+            return response()->json([
+                "success" => false,
+                "message" => "Unauthorized",
+            ], 403);
+        }
+
+        $id = "reports/prepayment/" . Str::random(6) . ".xlsx";
+        $from = Carbon::parse($request->from);
+        $to = Carbon::parse($request->to);
+
+        $data = Settlement::query()
+            ->with([
+                "pv:id,pv_no,description,supplier_id,supplier_account_id,paid_date,processable_id",
+                "pv.supplier:id,name",
+                "pv.supplier_account:id,account_number,bank_id",
+                "pv.supplier_account.bank:id,name",
+                "invoice:id,invoice_no,status",
+                "byhmd:id,invoice_no,status",
+                "byhmd.pv:processable_id,pv_no",
+            ])
+            ->whereHas("pv", function ($query) use ($from, $to) {
+                $query->whereBetween("paid_date", [$from, $to]);
+            })
+            ->oldest()
+            ->get();
+
+        $columns = function ($row) {
+            return [
+                'PV No' => $row->pv->pv_no,
+                'Tanggal Prepayment' => $row->pv->paid_date,
+                'Keterangan' => $row->pv->description,
+                'Supplier' => $row->pv->supplier->name,
+                'Bank' => $row->pv->supplier_account->bank->name,
+                'Nomor Rekening' => $row->pv->supplier_account->account_number,
+                'LPJ Invoice No' => $row->invoice?->invoice_no,
+                'LPJ Amount' => $row->lpj_amount,
+                'Balance' => $row->balance,
+                'BYHMD PV No' => $row->byhmd?->pv?->pv_no,
+                'BYHMD Amount' => $row->byhmd_amount,
+                'Status' => $row->status,
+            ];
+        };
+
+        $this->generateExcelReport($data, $columns, $id);
+
+        return response()->download(storage_path('app/public/' . $id), "prepayment-report.xlsx");
+    }
+
+    public function listUnitPelunasan(Request $request)
+    {
+        if (!auth()->user()->tokenCan("invoice-external:add")) {
+            return response()->json([
+                "success" => false,
+                "message" => "Unauthorized",
+            ], 403);
+        }
+
+        $id = "reports/list-unit-pelunasan/" . Str::random(6) . ".xlsx";
+        $from = Carbon::parse($request->from);
+        $to = Carbon::parse($request->to);
+
+        $data = Unit::query()
+            ->with([
+                "auction",
+                "auction.customer",
+            ])
+            ->where("payment_status", "LUNAS")
+            ->whereRelation("spp", "status", "PAID")
+            ->whereHas("auction", function ($query) use ($from, $to) {
+                $query->whereBetween("auction_date", [$from, $to]);
+            })
+            ->doesntHave("external")
+            ->oldest()
+            ->get();
+
+        $columns = function ($row) {
+            return [
+                'Tgl Lelang' => $row->auction->auction_date->format('d-m-Y'),
+                'Nama Bidder' => $row->auction->customer->name,
+                'Nopol' => $row->police_number,
+                'Noka' => $row->chassis_number,
+                'Nosin' => $row->engine_number,
+                'Harga Terbentuk' => $row->price,
+                'Fee Lelang' => $row->fee_amount,
+                'Cabang' => $row->auction->branch_name,
+            ];
+        };
+
+        $this->generateExcelReport($data, $columns, $id);
+
+        return response()->download(storage_path('app/public/' . $id), "list-unit-pelunasan.xlsx");
+    }
+
+    public function reportInvoiceExternal(Request $request)
+    {
+        if (!auth()->user()->tokenCan("report-invoice-external:download")) {
+            return response()->json([
+                "success" => false,
+                "message" => "Unauthorized",
+            ], 403);
+        }
+
+        $id = "reports/invoice-external/" . Str::random(6) . ".xlsx";
+        $from = Carbon::parse($request->from);
+        $to = Carbon::parse($request->to);
+
+        $data = InvoiceExternal::query()
+            ->with([
+                'supplier',
+            ])
+            ->whereBetween("date", [$from, $to])
+            ->oldest()
+            ->get();
+
+        $columns = function ($row) {
+            return [
+                'Invoice External No' => $row->invoice_external_no,
+                'Tanggal Pengajuan' => $row->date,
+                'Tanggal Jatuh Tempo' => $row->due_date,
+                'Keterangan' => $row->description,
+                'Supplier' => $row->supplier->name,
+                'Total Unit' => $row->total_unit,
+                'Total Amount Real' => $row->total_amount_real,
+                'Total Amount Tagihan' => $row->total_amount_manual,
+                'PPN' => $row->ppn,
+                'PPH23' => $row->pph23,
+                'Netto' => $row->grand_total,
+                'Status' => $row->status,
+            ];
+        };
+
+        $this->generateExcelReport($data, $columns, $id);
+
+        return response()->download(storage_path('app/public/' . $id), "invoice-external-report.xlsx");
     }
 }

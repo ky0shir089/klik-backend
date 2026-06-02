@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string("name");
             $table->string("in_out");
             $table->boolean("is_active");
+            $table->foreignId("role_id")->nullable()->constrained("roles")->cascadeOnDelete();
             $table->foreignId("created_by")->constrained("users")->cascadeOnDelete();
             $table->foreignId("updated_by")->nullable()->constrained("users")->cascadeOnDelete();
             $table->timestamps();

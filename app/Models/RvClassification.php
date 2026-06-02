@@ -31,4 +31,9 @@ class RvClassification extends Model
     {
         return $this->belongsTo(RV::class, 'rv_id', 'id');
     }
+
+    public function unit(): BelongsTo
+    {
+        return $this->belongsTo(Unit::class, 'unit_id', 'id');
+    }
 }

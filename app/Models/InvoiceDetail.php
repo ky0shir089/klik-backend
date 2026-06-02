@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 
 class InvoiceDetail extends Model
 {
@@ -46,5 +47,20 @@ class InvoiceDetail extends Model
     public function rv(): BelongsTo
     {
         return $this->belongsTo(RV::class, 'rv_id', 'id');
+    }
+
+    public function invoice(): BelongsTo
+    {
+        return $this->belongsTo(Invoice::class, 'invoice_id', 'id');
+    }
+
+    public function mit(): MorphOne
+    {
+        return $this->morphOne(RV::class, 'invoiceable');
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by', 'id');
     }
 }

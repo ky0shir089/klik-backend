@@ -27,7 +27,7 @@ class GeneralLedgerController extends Controller
         $query = GL::select("gl_no", "date", "description")
             ->where("type", "JV")
             ->when($request->search, function ($query, $search) {
-                $query->where("gl_no", "ilike", "%$search%");
+                $query->where("gl_no", "ilike", "$search%");
             })
             ->groupBy("gl_no", "date", "description")
             ->orderBy("gl_no", "asc")
