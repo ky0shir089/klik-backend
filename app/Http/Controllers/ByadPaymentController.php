@@ -81,7 +81,6 @@ class ByadPaymentController extends Controller
                 'supplier_account_id' => 3,
                 'description' => 'PEMBAYARAN BYAD',
                 'total_amount' => $byadAmount,
-                'file_upload_id' => $byad->file_upload_id,
                 'status' => 'REQUEST',
                 'created_by' => $authId,
                 'updated_at' => null,
