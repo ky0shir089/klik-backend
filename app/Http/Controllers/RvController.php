@@ -104,7 +104,6 @@ class RvController extends Controller
             if ($request->invoice_id) {
                 $invoice = Invoice::find($request->invoice_id);
                 if ($invoice) {
-                    $pph23 = round($request->starting_balance * 0.02);
                     $isCashOpname = $invoice->details->hasSole(fn($item) => $item["inv_coa_id"] == 25);
                     if ($isCashOpname) {
                         $type = Invoice::class;
