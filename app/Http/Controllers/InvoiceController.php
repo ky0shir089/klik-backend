@@ -192,6 +192,7 @@ class InvoiceController extends Controller
             "details.rv:id,rv_no,ending_balance",
             "wf_histories",
             "wf_histories.user:id,name",
+            "wf_approval:processable_id,approve_count",
             "settlement:lpj_invoice_id,prepayment_pv_id,prepayment_pv_id",
             "settlement.pv:id,pv_no,pv_amount",
         ]));

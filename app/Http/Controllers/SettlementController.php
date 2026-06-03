@@ -36,6 +36,7 @@ class SettlementController extends Controller
                 "pv.supplier_account:id,account_number,bank_id",
                 "pv.supplier_account.bank:id,name",
                 "invoice:id,invoice_no,status",
+                "invoice.wf_approval:processable_id,approve_count",
                 "byhmd:id,invoice_no,status",
                 "byhmd.pv:processable_id,pv_no",
             ])
@@ -201,7 +202,8 @@ class SettlementController extends Controller
             "invoice.details.coa",
             "invoice.details.pph",
             "invoice.wf_histories",
-            "invoice.wf_histories.user:id,name"
+            "invoice.wf_histories.user:id,name",
+            "pv:id,pv_no"
         ]));
     }
 
@@ -267,7 +269,6 @@ class SettlementController extends Controller
                 ];
             }
 
-            info($details);
             $invoice->details()->insert($details);
             $invoice->total_amount = $sumTotalAmount;
             $invoice->save();
