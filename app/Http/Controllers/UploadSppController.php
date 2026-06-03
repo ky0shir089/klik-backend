@@ -80,8 +80,7 @@ class UploadSppController extends Controller
                                     ->orWhere("chassis_number", $item["chassis_number"])
                                     ->orWhere("engine_number", $item["engine_number"]);
                             })
-                            ->whereNull("contract_number")
-                            ->whereNull("package_number")
+                            ->latest("id")
                             ->first();
 
                         if ($unit) {
