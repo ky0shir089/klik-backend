@@ -88,7 +88,7 @@ class PaymentVoucherController extends Controller
                     ->whereNotNull("pv_no")
                     ->where("created_at", ">=", date('Y') . "-01-01")
                     ->where("created_at", "<=", date('Y') . "-12-31")
-                    ->count() + 1;
+                    ->count() + 2;
             }
             $pvNo = 'PV' . $currentYear . Str::padLeft($countPv++, 5, '0');
 

@@ -234,6 +234,7 @@ class InvoiceController extends Controller
                     break;
                 case 'CANCEL':
                     $invoice->pv()->delete();
+                    $invoice->update(['status' => 'CANCEL']);
                     break;
             }
 
