@@ -335,7 +335,7 @@ class SelectController extends Controller
     public function moneyInTransit()
     {
         $query = InvoiceDetail::select("id", "invoice_id", "total_amount", "description")
-            ->with("invoice:id,invoice_no")
+            ->with("invoice:id,invoice_no,description")
             ->where("inv_coa_id", 25)
             ->whereRelation("invoice", "status", "PAID")
             ->doesntHave("mit")

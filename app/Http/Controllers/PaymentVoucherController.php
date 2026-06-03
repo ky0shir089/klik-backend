@@ -209,23 +209,25 @@ class PaymentVoucherController extends Controller
 
                     if ($pv->trx_dtl_id == 3) {
                         $byadPayment = ByadPayment::where("invoice_id", $pv->processable_id)->first();
-                        $byadPayment->status = "PAID";
-                        $byadPayment->updated_by = $authId;
-                        $byadPayment->save();
+                        if ($byadPayment) {
+                            $byadPayment->status = "PAID";
+                            $byadPayment->updated_by = $authId;
+                            $byadPayment->save();
 
-                        $byad_id = $byadPayment->details->pluck("byad_id");
+                            $byad_id = $byadPayment->details->pluck("byad_id");
 
-                        ByadHeader::whereIn("id", $byad_id)->update([
-                            "status" => "PAID",
-                            "updated_by" => $authId,
-                        ]);
-
-                        $byadDetail = ByadDetail::whereIn("byad_id", $byad_id)->get();
-                        foreach ($byadDetail as $detail) {
-                            $detail->unit()->update([
-                                "byad_status" => "PAID",
+                            ByadHeader::whereIn("id", $byad_id)->update([
+                                "status" => "PAID",
                                 "updated_by" => $authId,
                             ]);
+
+                            $byadDetail = ByadDetail::whereIn("byad_id", $byad_id)->get();
+                            foreach ($byadDetail as $detail) {
+                                $detail->unit()->update([
+                                    "byad_status" => "PAID",
+                                    "updated_by" => $authId,
+                                ]);
+                            }
                         }
                     }
 
