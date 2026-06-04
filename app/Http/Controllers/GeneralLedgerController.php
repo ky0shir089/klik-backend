@@ -60,7 +60,7 @@ class GeneralLedgerController extends Controller
         try {
             $year = Carbon::parse($request->date)->format('y');
             $seq = GL::select("gl_no")
-                ->where('gl_no', 'like', 'JV%' . $year . '%')
+                ->where('gl_no', 'ilike', 'JV%' . $year . '%')
                 ->groupBy("gl_no")
                 ->get()
                 ->count();

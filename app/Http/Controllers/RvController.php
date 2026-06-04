@@ -118,14 +118,14 @@ class RvController extends Controller
                     $external->save();
 
                     $startingBalance = $external->grand_total + $external->pph23;
-                }
 
-                $ledgers[] = [
-                    ...$gl,
-                    "coa_id" => 18,
-                    "debit" => $pph23,
-                    "credit" => 0,
-                ];
+                    $ledgers[] = [
+                        ...$gl,
+                        "coa_id" => 18,
+                        "debit" => $pph23,
+                        "credit" => 0,
+                    ];
+                }
             }
 
             $sql = RV::create($request->validated() + [
