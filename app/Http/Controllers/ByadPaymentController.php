@@ -81,10 +81,10 @@ class ByadPaymentController extends Controller
                 $files[] = storage_path("app/public/" . $attachmentPath);
             }
             $filename = $slug . '_merged.pdf';
-            $output = storage_path("app/public/pdf/" . $filename);
+            $output = storage_path("app/public/file-uploads/" . $filename);
             $fileUpload = FileUpload::create([
                 'filename' => $filename,
-                'path' => "pdf/" . $filename,
+                'path' => "file-uploads/" . $filename,
                 'extension' => 'pdf',
                 'created_by' => $authId,
                 'updated_at' => null,
