@@ -45,7 +45,11 @@ class InvoiceController extends Controller
                 "type_trx",
             ])
             ->when(auth()->user()->role->id == 3, function ($query) {
-                $query->where("created_by", auth()->id());
+                $query->whereHas("user", function ($query) {
+                    $query->whereHas("role", function ($query) {
+                        $query->where("roles.id", 3);
+                    });
+                });
             })
             ->when($request->search, function ($query, $search) {
                 $query->whereAny([

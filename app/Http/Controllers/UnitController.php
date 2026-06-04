@@ -58,7 +58,6 @@ class UnitController extends Controller
 
             $pluckedRvs = $unit->classifications()->pluck("rv_id");
             $rvs = RV::whereIn("id", $pluckedRvs)->get();
-            info($rvs);
             $countRv = $rvs->count();
 
             if ($countRv == 1) {

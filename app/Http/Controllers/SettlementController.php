@@ -222,8 +222,6 @@ class SettlementController extends Controller
         DB::transaction(function () use ($request, $settlement) {
             $authId = auth()->id();
             $invoice = $settlement->invoice;
-            info($settlement);
-            info($settlement->invoice);
 
             if ($request->hasFile('attachment')) {
                 $file = (new FileUploadService)->handleUpload($request->file('attachment'));

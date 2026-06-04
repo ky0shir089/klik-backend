@@ -6,8 +6,10 @@ use App\Http\Requests\ByadPaymentRequest;
 use App\Http\Resources\GetResource;
 use App\Models\ByadHeader;
 use App\Models\ByadPayment;
+use App\Models\FileUpload;
 use App\Models\Invoice;
 use App\Models\InvoiceDetail;
+use App\Services\MergePdf;
 use App\Services\WorkflowService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -71,6 +73,25 @@ class ByadPaymentController extends Controller
 
             $year = date('y');
             $invoice_no = 'KLIK/' . date("m") . '/' . $year . '/' . Str::padLeft(Invoice::count() + 1, 3, '0');
+            $slug = Str::slug($invoice_no);
+
+            $files = [];
+            foreach ($byadData as $detail) {
+                $attachmentPath = $detail->attachment->path;
+                $files[] = storage_path("app/public/" . $attachmentPath);
+            }
+            $filename = $slug . '_merged.pdf';
+            $output = storage_path("app/public/pdf/" . $filename);
+            $fileUpload = FileUpload::create([
+                'filename' => $filename,
+                'path' => "pdf/" . $filename,
+                'extension' => 'pdf',
+                'created_by' => $authId,
+                'updated_at' => null,
+            ]);
+            $fileUpload->save();
+
+            (new MergePdf())->mergePdf($files, $output);
 
             $invoice = Invoice::create([
                 'date' => $request->date,
@@ -81,6 +102,7 @@ class ByadPaymentController extends Controller
                 'supplier_account_id' => 3,
                 'description' => 'PEMBAYARAN BYAD',
                 'total_amount' => $byadAmount,
+                'file_upload_id' => $fileUpload->id,
                 'status' => 'REQUEST',
                 'created_by' => $authId,
                 'updated_at' => null,
@@ -124,8 +146,6 @@ class ByadPaymentController extends Controller
 
             (new WorkflowService($invoice));
         });
-
-        info($sql);
 
         return response()->json([
             "success" => true,

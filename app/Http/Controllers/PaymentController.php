@@ -275,7 +275,6 @@ class PaymentController extends Controller
     public function pdf(Payment $payment)
     {
         $customer = $payment->customer;
-        info($customer);
         $html = "<h1>{$customer->name}</h1>";
         return Pdf::html($html)->save(storage_path("app/public/memo/invoce.pdf"));
     }
