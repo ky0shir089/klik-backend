@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\ChartOfAccount;
 use App\Models\GL;
-use App\Models\Invoice;
 use App\Models\InvoiceDetail;
 use App\Models\InvoiceExternal;
 use App\Models\RV;
@@ -12,7 +11,6 @@ use App\Models\Settlement;
 use App\Models\Unit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Rap2hpoutre\FastExcel\FastExcel;
 

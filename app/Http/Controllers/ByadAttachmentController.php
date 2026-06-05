@@ -58,6 +58,7 @@ class ByadAttachmentController extends Controller
                 'Harga Terbentuk' => $row->price,
                 'Nominal BYAD' => $row->byad_amount,
                 'Cabang' => $row->auction->branch_name,
+                'Pejabat Lelang' => $row->pejabat_lelang,
             ];
         };
 
