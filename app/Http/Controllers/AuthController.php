@@ -3,15 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ChangePasswordRequest;
-use App\Http\Requests\ProfileRequest;
+use App\Http\Requests\ResetPasswordRequest;
 use App\Http\Requests\SignInRequest;
 use App\Http\Requests\SignUpRequest;
 use App\Http\Resources\GetResource;
-use App\Http\Resources\UpdateResource;
 use App\Models\Module;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -69,6 +71,99 @@ class AuthController extends Controller
                 'message' => 'Invalid credentials'
             ], 400);
         }
+    }
+
+    public function forgotPassword(Request $request)
+    {
+        $request->validate([
+            'phone' => ['required'],
+        ]);
+
+        $user = User::where('phone', $request->phone)->first();
+
+        if (!$user) {
+            return response()->json([
+                'success' => true,
+                'message' => 'A reset link has been sent.'
+            ]);
+        }
+
+        $token = $token = Str::random(64);
+
+        DB::table('password_reset_tokens')->insert([
+            'email' => $user->phone,
+            'token' => Hash::make($token),
+            'created_at' => now(),
+        ]);
+
+        $resetUrl = 'https://klik-lelang.vercel.app/reset-password?' . http_build_query([
+            'token' => $token,
+            'phone' => $user->phone,
+        ]);
+
+        $message = "Klik link berikut untuk reset password Anda:\n\n{$resetUrl}\n\nLink berlaku terbatas. Abaikan pesan ini jika Anda tidak meminta reset password.";
+
+        Http::withHeaders([
+            'Authorization' => "cMxPVP36vsYEEyK2vtgU",
+        ])->post('https://api.fonnte.com/send', [
+            'target' => $request->phone,
+            'message' => $message,
+        ])->json();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'A reset link has been sent.'
+        ]);
+    }
+
+    public function resetPassword(ResetPasswordRequest $request)
+    {
+        $record = DB::table('password_reset_tokens')
+            ->where('email', $request->phone)
+            ->first();
+
+        if (!$record) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid or expired reset token.',
+            ], 400);
+        }
+
+        if (now()->parse($record->created_at)->addMinutes(60)->isPast()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid or expired reset token.',
+            ], 400);
+        }
+
+        if (!Hash::check($request->token, $record->token)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid or expired reset token.',
+            ], 400);
+        }
+
+        $user = User::where('phone', $request->phone)->first();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid phone number.',
+            ], 400);
+        }
+
+        $user->forceFill([
+            'password' => Hash::make($request->password),
+        ])->save();
+
+        DB::table('password_reset_tokens')
+            ->where('email', $request->phone)
+            ->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Password changed successfully',
+        ]);
     }
 
     public function changePassword(ChangePasswordRequest $request)

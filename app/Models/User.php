@@ -26,7 +26,8 @@ class User extends Authenticatable
         'password',
         'change_password',
         'ip_address',
-        'user_agent'
+        'user_agent',
+        'phone',
     ];
 
     /**

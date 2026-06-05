@@ -48,6 +48,8 @@ Route::get('/user', function (Request $request) {
 
 Route::post("auth/sign-up", [AuthController::class, "signUp"]);
 Route::post("auth/sign-in", [AuthController::class, "signIn"]);
+Route::post("auth/forgot-password", [AuthController::class, "forgotPassword"]);
+Route::post("auth/reset-password", [AuthController::class, "resetPassword"]);
 
 Route::middleware('auth:sanctum')
     ->group(function () {
