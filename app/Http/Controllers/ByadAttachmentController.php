@@ -34,7 +34,7 @@ class ByadAttachmentController extends Controller
 
         $data = $byad->details->flatMap(function ($paymentDetail) {
             $units =  $paymentDetail->byad->details->load([
-                'unit:id,auction_id,police_number,chassis_number,engine_number,price,byad_amount,brand,color,year,no_lot,type',
+                'unit:id,auction_id,police_number,chassis_number,engine_number,price,byad_amount,brand,color,year,no_lot,type,pejabat_lelang',
                 'unit.auction:klik_auction_id,auction_date,customer_id,branch_name',
                 'unit.auction.customer:klik_bidder_id,name,address,phone'
             ]);
