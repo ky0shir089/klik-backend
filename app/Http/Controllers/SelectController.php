@@ -200,6 +200,7 @@ class SelectController extends Controller
     {
         $query = RV::select("id", "rv_no", "description", "ending_balance")
             ->where("ending_balance", ">", 0)
+            ->where("status", "NEW")
             ->when($request->search, function ($query, $search) {
                 $query->whereAny([
                     "rv_no",

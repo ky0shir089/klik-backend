@@ -79,7 +79,9 @@ class AuthController extends Controller
             'phone' => ['required'],
         ]);
 
-        $user = User::where('phone', $request->phone)->first();
+        $phone = $this->normalizePhone($request->phone);
+
+        $user = User::where('phone', $phone)->first();
 
         if (!$user) {
             return response()->json([
@@ -106,7 +108,7 @@ class AuthController extends Controller
         Http::withHeaders([
             'Authorization' => "cMxPVP36vsYEEyK2vtgU",
         ])->post('https://api.fonnte.com/send', [
-            'target' => $request->phone,
+            'target' => $phone,
             'message' => $message,
         ])->json();
 
@@ -222,5 +224,23 @@ class AuthController extends Controller
             ->get();
 
         return new GetResource($query);
+    }
+
+    private function normalizePhone(string $phone): string
+    {
+        $phone = preg_replace('/\D/', '', $phone);
+
+        if (str_starts_with($phone, '0')) {
+            $phone = '62' . substr($phone, 1);
+        }
+
+        if (! str_starts_with($phone, '62')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid Indonesian phone number',
+            ], 400);
+        }
+
+        return $phone;
     }
 }
