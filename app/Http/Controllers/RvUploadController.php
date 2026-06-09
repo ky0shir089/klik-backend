@@ -85,18 +85,17 @@ class RvUploadController extends Controller
             $excelData = collect($array)->groupBy(["va_number"]);
 
             $currentYear = date('y');
-            $findLastRvDate = RV::select("date")->latest()->first();
-            $lastRvDate = $findLastRvDate->date ?? now();
-            $lastRvYear = Carbon::parse($lastRvDate)->format('y');
-            if ($currentYear > $lastRvYear) {
-                $countRv = 1;
-            } else {
-                $countRv = RV::query()
-                    ->where("date", ">=", date('Y') . "-01-01")
-                    ->where("date", "<=", date('Y') . "-12-31")
-                    ->count() + 1;
+            $prefix = 'RV' . $currentYear;
+            
+            $lastRv = RV::where('rv_no', 'like', $prefix . '%')
+                ->latest('rv_no')
+                ->first();
+
+            $countRv = 1;
+            if ($lastRv) {
+                $lastSequence = (int) Str::after($lastRv->rv_no, $prefix);
+                $countRv = $lastSequence + 1;
             }
-            $rvNo = 'RV' . $currentYear;
 
             $authId = auth()->id();
 
@@ -120,7 +119,7 @@ class RvUploadController extends Controller
                         ];
                     } else {
                         foreach ($rows as $row) {
-                            $glNo = $rvNo . Str::padLeft($countRv, 5, '0');
+                            $glNo = $prefix . Str::padLeft($countRv, 5, '0');
                             $customerName = Str::replace("KLIKLELANG-", "", $row["customer_name"]);
 
                             $glInsert[] = [
@@ -150,7 +149,7 @@ class RvUploadController extends Controller
                             ];
 
                             $rvInsert[] = [
-                                "rv_no" => $rvNo . Str::padLeft($countRv++, 5, '0'),
+                                "rv_no" => $prefix . Str::padLeft($countRv++, 5, '0'),
                                 "date" => Carbon::parse($row["payment_date"]),
                                 "type_trx_id" => 1,
                                 "description" => 'Terima Titipan Pelunasan#' . $row["va_number"] . "_" . $customerName,

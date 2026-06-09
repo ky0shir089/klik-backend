@@ -71,20 +71,15 @@ class RvController extends Controller
         DB::beginTransaction();
 
         try {
-            $currentYear = date('y');
-            $findLastRvDate = RV::select("date")->latest()->first();
-            $lastRvDate = $findLastRvDate->date ?? now();
-            $lastRvYear = Carbon::parse($lastRvDate)->format('y');
-            if ($currentYear > $lastRvYear) {
-                $countRv = 1;
-            } else {
-                $countRv = RV::query()
-                    ->where("date", ">=", date('Y') . "-01-01")
-                    ->where("date", "<=", date('Y') . "-12-31")
-                    ->count() + 1;
-            }
-            $rvNo = 'RV' . $currentYear;
-            $rv_no = $rvNo . Str::padLeft($countRv++, 5, '0');
+            $year = Carbon::parse($request->date)->format('y');
+            $prefix = 'RV' . $year;
+
+            $lastRv = RV::where('rv_no', 'like', $prefix . '%')
+                ->orderBy('rv_no', 'desc')
+                ->first();
+
+            $countRv = $lastRv ? (int) Str::after($lastRv->rv_no, $prefix) + 1 : 1;
+            $rv_no = $prefix . Str::padLeft($countRv, 5, '0');
 
             $ledgers = [];
 

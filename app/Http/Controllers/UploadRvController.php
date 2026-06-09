@@ -91,7 +91,17 @@ class UploadRvController extends Controller
 
             try {
                 $year = date('y');
-                $count_rv = RV::count() + 1;
+                $prefix = 'RV' . $year;
+                
+                $lastRv = RV::where('rv_no', 'like', $prefix . '%')
+                    ->latest('rv_no')
+                    ->first();
+
+                $count_rv = 1;
+                if ($lastRv) {
+                    $lastSequence = (int) Str::after($lastRv->rv_no, $prefix);
+                    $count_rv = $lastSequence + 1;
+                }
 
                 $authId = auth()->id();
 
@@ -176,7 +186,7 @@ class UploadRvController extends Controller
                         $glInsert = [];
 
                         foreach ($rvRows as $row) {
-                            $glNo = 'RV' . $year . Str::padLeft($count_rv, 5, '0');
+                            $glNo = $prefix . Str::padLeft($count_rv, 5, '0');
                             // ✔ aggregate both debit + credit into one insert batch
                             $glInsert[] = [
                                 "gl_no" => $glNo,
@@ -207,7 +217,7 @@ class UploadRvController extends Controller
                             $customerName = Str::replace("KLIKLELANG-", "", $row["customer_name"]);
 
                             $rvInsert[] = [
-                                "rv_no" => 'RV' . $year . Str::padLeft($count_rv++, 5, '0'),
+                                "rv_no" => $prefix . Str::padLeft($count_rv++, 5, '0'),
                                 "date" => Carbon::parse($row["payment_date"]),
                                 "type_trx_id" => 1,
                                 "description" => 'Terima Titipan Pelunasan#' . $row["va_number"] . "_" . $customerName,
