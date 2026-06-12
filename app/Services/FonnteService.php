@@ -36,7 +36,7 @@ class FonnteService
         ];
 
         Http::withHeaders([
-            'Authorization' => "cMxPVP36vsYEEyK2vtgU",
+            'Authorization' => "xfyrovSRhZvKi9IvsYK9",
         ])->post('https://api.fonnte.com/send', [
             'data' => $data['data'],
         ])->json();

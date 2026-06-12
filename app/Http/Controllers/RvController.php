@@ -74,8 +74,9 @@ class RvController extends Controller
             $year = Carbon::parse($request->date)->format('y');
             $prefix = 'RV' . $year;
 
-            $lastRv = RV::where('rv_no', 'like', $prefix . '%')
-                ->orderBy('rv_no', 'desc')
+            $lastRv = RV::select("rv_no")
+                ->where('rv_no', 'like', $prefix . '%')
+                ->latest('rv_no')
                 ->first();
 
             $countRv = $lastRv ? (int) Str::after($lastRv->rv_no, $prefix) + 1 : 1;

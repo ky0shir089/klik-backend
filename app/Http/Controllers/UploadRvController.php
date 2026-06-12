@@ -24,8 +24,8 @@ class UploadRvController extends Controller
      */
     public function __invoke(Request $request)
     {
-        set_time_limit(300); 
-        
+        set_time_limit(300);
+
         if (!auth()->user()->tokenCan("rv:add")) {
             return response()->json([
                 "success" => false,
@@ -92,8 +92,9 @@ class UploadRvController extends Controller
             try {
                 $year = date('y');
                 $prefix = 'RV' . $year;
-                
-                $lastRv = RV::where('rv_no', 'like', $prefix . '%')
+
+                $lastRv = RV::select("rv_no")
+                    ->where('rv_no', 'like', $prefix . '%')
                     ->latest('rv_no')
                     ->first();
 

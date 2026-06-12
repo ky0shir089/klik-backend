@@ -32,7 +32,7 @@ class ReportController extends Controller
         });
     }
 
-    public function reportRv()
+    public function reportRv(Request $request)
     {
         if (!auth()->user()->tokenCan("report-rv:download")) {
             return response()->json([
@@ -42,10 +42,13 @@ class ReportController extends Controller
         }
 
         $id = "reports/rv/" . Str::random(6) . ".xlsx";
+        $from = Carbon::parse($request->from . " 00:00:00");
+        $to = Carbon::parse($request->to . " 23:59:59");
 
         $data = RV::query()
-            ->where("coa_id", 58)
-            ->where("ending_balance", "!=", 0)
+            ->whereBetween("date", [$from, $to])
+            ->where("coa_id", $request->type)
+            ->where("ending_balance", ">", 0)
             ->get();
 
         $columns = function ($row) {

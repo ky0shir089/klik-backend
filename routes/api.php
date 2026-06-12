@@ -174,7 +174,7 @@ Route::middleware('auth:sanctum')
             ->group(function () {
                 Route::prefix('v1')
                     ->group(function () {
-                        Route::get('report-rv', [ReportController::class, 'reportRv']);
+                        Route::post('report-rv', [ReportController::class, 'reportRv']);
                         Route::post('report-auction', [ReportController::class, 'reportAuction']);
                         Route::post('report-bank', [ReportController::class, 'reportBank']);
                         Route::post('report-gl', [ReportController::class, 'reportGl']);
