@@ -122,6 +122,7 @@ Route::middleware('auth:sanctum')
                         Route::resource('customer', CustomerController::class);
                         Route::resource('auction-customer', AuctionCustomerController::class);
                         Route::resource('payment', PaymentController::class);
+                        Route::post('spp-inbox', [PaymentController::class, 'showInbox']);
                         Route::post('upload-spp', UploadSppController::class);
                         Route::get('memo-payment/{payment}', MemoPaymentController::class);
                         Route::resource('spp', SppController::class);

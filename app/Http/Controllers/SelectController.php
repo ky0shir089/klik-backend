@@ -96,7 +96,6 @@ class SelectController extends Controller
         $query = TypeTrx::query()
             ->with(["trx_dtl", "trx_dtl.coa"])
             ->where("is_active", true)
-            ->where("id", "!=", 2)
             ->when($request->in_out, function ($query, $in_out) {
                 $query->where("in_out", $in_out);
             })

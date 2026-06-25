@@ -77,20 +77,17 @@ class PaymentVoucherController extends Controller
         DB::beginTransaction();
 
         try {
-            $currentYear = date('y');
-            $findLastRvDate = PaymentVoucher::select("created_at")->latest()->first();
-            $lastPvDate = $findLastRvDate->date ?? now();
-            $lastPvYear = Carbon::parse($lastPvDate)->format('y');
-            if ($currentYear > $lastPvYear) {
-                $countPv = 1;
-            } else {
-                $countPv = PaymentVoucher::query()
-                    ->whereNotNull("pv_no")
-                    ->where("created_at", ">=", date('Y') . "-01-01")
-                    ->where("created_at", "<=", date('Y') . "-12-31")
-                    ->count() + 2;
-            }
-            $pvNo = 'PV' . $currentYear . Str::padLeft($countPv++, 5, '0');
+            $year = Carbon::parse($request->paid_date)->format('y');
+            $prefix = 'PV' . $year;
+
+            $lastPv = PaymentVoucher::select("pv_no")
+                ->whereNotNull("pv_no")
+                ->where('pv_no', 'ilike', "$prefix%")
+                ->latest('pv_no')
+                ->first();
+
+            $countPv = $lastPv ? (int) Str::after($lastPv->pv_no, $prefix) + 1 : 1;
+            $pvNo = $prefix . Str::padLeft($countPv, 5, '0');
 
             $trxs = [];
             $authId = auth()->id();

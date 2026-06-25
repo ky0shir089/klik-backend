@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Number;
+use Illuminate\Support\Str;
 
 class FonnteService
 {
@@ -14,14 +14,15 @@ class FonnteService
     {
         $detail = $invoice->load("type_trx:id,name", "user:id,name");
 
+        $truncated = Str::limit($invoice->description, 20, preserveWords: true);
+
         $message = "*KLIK INVOICE*\n\n" .
             "Tanggal: {$invoice->date}\n" .
             "Invoice No: {$invoice->invoice_no}\n" .
             "Type Trx: {$detail->type_trx->name}\n" .
-            "Deskripsi: {$invoice->description}\n" .
-            "Amount: " .  Number::format($invoice->total_amount) . "\n" .
+            "Deskripsi: {$truncated}\n" .
             "Created By: {$detail->user->name}\n\n" .
-            "Link: https://klik-lelang.vercel.app/workflow/inbox/{$invoice->id}";
+            "Link: https://keu.klikinternal.com/workflow/inbox/{$invoice->id}";
 
         $alldata = [
             [

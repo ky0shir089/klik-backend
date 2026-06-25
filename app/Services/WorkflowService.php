@@ -39,7 +39,7 @@ class WorkflowService
                 "approve_count" => 0,
             ]);
 
-            (new FonnteService($invoice, $notifications));
+            (new WhatsAppService($invoice, $notifications));
         } else {
             $invoice->status = "APPROVE";
             $invoice->save();
@@ -54,7 +54,7 @@ class WorkflowService
                 "created_by" => auth()->id(),
             ]);
 
-            (new FonnteService($invoice, '6289518901400'));
+            (new WhatsAppService($invoice, '6289518901400'));
         }
 
         return $notifications;

@@ -16,7 +16,7 @@ use App\Models\WorkflowApproval;
 use App\Models\WorkflowHistory;
 use App\Services\LpjService;
 use App\Services\FileUploadService;
-use App\Services\FonnteService;
+use App\Services\WhatsAppService;
 use App\Services\WorkflowService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -126,20 +126,18 @@ class InvoiceController extends Controller
         try {
             $authId = auth()->id();
 
-            $currentYear = date('y');
-            $findLastInvDate = Invoice::select("created_at")->latest()->first();
-            $lastInvDate = $findLastInvDate->date ?? now();
-            $lastInvYear = Carbon::parse($lastInvDate)->format('y');
-            if ($currentYear > $lastInvYear) {
-                $countInv = 1;
-            } else {
-                $countInv = Invoice::query()
-                    ->whereNotNull("invoice_no")
-                    ->where("created_at", ">=", date('Y') . "-01-01")
-                    ->where("created_at", "<=", date('Y') . "-12-31")
-                    ->count() + 1;
-            }
-            $invoice_no = 'KLIK/' . date("m") . '/' . $currentYear . '/' . Str::padLeft($countInv++, 3, '0');
+            $month = Carbon::parse($request->date)->format('m');
+            $year = Carbon::parse($request->date)->format('y');
+            $prefix = 'KLIK/' .  $month  . '/' . $year . '/';
+
+            $lastInv = Invoice::select("invoice_no")
+                ->whereNotNull("invoice_no")
+                ->where('invoice_no', 'ilike', "$prefix%")
+                ->latest('invoice_no')
+                ->first();
+
+            $countInv = $lastInv ? (int) Str::after($lastInv->invoice_no, $prefix) + 1 : 1;
+            $invoice_no = $prefix . Str::padLeft($countInv, 3, '0');
 
             if ($request->hasFile('attachment')) {
                 $file = (new FileUploadService)->handleUpload($request->file('attachment'));
@@ -342,7 +340,7 @@ class InvoiceController extends Controller
         ])
             ->first();
         if ($nextStep) {
-            (new FonnteService($invoice, $nextStep->user->phone));
+            (new WhatsAppService($invoice, $nextStep->user->phone));
         }
 
         // Finalize if all steps approved
@@ -353,7 +351,7 @@ class InvoiceController extends Controller
             ->count();
         if ($approval->approve_count === $totalSteps) {
             $invoice->update(['status' => 'APPROVE']);
-            (new FonnteService($invoice, '6289518901400'));
+            (new WhatsAppService($invoice, '6289518901400'));
 
             if ($invoice->payment_method !== "PREPAYMENT") {
                 $invoice->pv()->create([

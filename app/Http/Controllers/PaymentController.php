@@ -7,15 +7,14 @@ use App\Http\Resources\DeleteResource;
 use App\Http\Resources\GetResource;
 use App\Http\Resources\StoreResource;
 use App\Http\Resources\UpdateResource;
-use App\Models\Customer;
+use App\Models\Invoice;
 use App\Models\Payment;
-use App\Models\RV;
 use App\Models\Spp;
-use App\Models\Unit;
-use Carbon\Carbon;
+use App\Services\WorkflowService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Spatie\LaravelPdf\Facades\Pdf;
+use Illuminate\Support\Str;
 
 class PaymentController extends Controller
 {
@@ -45,95 +44,6 @@ class PaymentController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    // public function store(PaymentRequest $request)
-    // {
-    //     if (!auth()->user()->tokenCan("repayment:add")) {
-    //         return response()->json([
-    //             "success" => false,
-    //             "message" => "Unauthorized",
-    //         ], 403);
-    //     }
-
-    //     DB::beginTransaction();
-
-    //     try {
-    //         $authId = auth()->id();
-
-    //         $rvs = [];
-    //         foreach ($request->rvs as $rv) {
-    //             $rvData = RV::find($rv);
-    //             if ($rv) {
-    //                 $rvs[] = [
-    //                     "rv_id" => $rv,
-    //                     "rv_amount" => $rvData->ending_balance,
-    //                     "created_by" => $authId,
-    //                 ];
-    //             }
-    //         }
-    //         $total_rv = collect($rvs)->sum("rv_amount");
-
-    //         $units = [];
-    //         $totalAmount = 0;
-    //         foreach ($request->units as $unit) {
-    //             $unitData = Unit::find($unit);
-    //             $totalAmount += $unitData->price;
-    //             $units[] = [
-    //                 "unit_id" => $unit,
-    //                 "created_by" => $authId,
-    //             ];
-    //         }
-
-    //         if ($total_rv < $totalAmount) {
-    //             return response()->json([
-    //                 "success" => false,
-    //                 "message" => "RV amount is less than unit amount",
-    //             ]);
-    //         }
-
-    //         $sql = Payment::create($request->safe()->except(["units", "rvs"]) + [
-    //             'total_unit' => count($units),
-    //             'total_amount' => $totalAmount,
-    //             // 'status' => "REQUEST",
-    //             'status' => "NEW",
-    //             'created_by' => $authId,
-    //             'updated_at' => null,
-    //         ]);
-
-    //         $sql->units()->createMany($units);
-    //         $sql->rvs()->createMany($rvs);
-
-    //         Unit::whereIn("id", $request->units)->update([
-    //             'payment_status' => 'REQUEST',
-    //         ]);
-    //         RV::whereIn("id", $request->rvs)->update([
-    //             'status' => 'USED',
-    //         ]);
-
-    //         // $sql->pv()->create([
-    //         //     "supplier_id" => 1,
-    //         //     "supplier_account_id" => 1,
-    //         //     "pv_amount" => $totalAmount,
-    //         //     "rv_amount" => $total_rv,
-    //         //     "status" => "NEW",
-    //         //     "trx_dtl_id" => 2,
-    //         //     "created_by" => auth()->id(),
-    //         // ]);
-
-    //         DB::commit();
-
-    //         return new StoreResource($sql);
-    //     } catch (\Throwable $th) {
-    //         info($th->getMessage());
-
-    //         DB::rollback();
-
-    //         return response()->json([
-    //             "success" => false,
-    //             "message" => $th->getMessage(),
-    //         ], 400);
-    //     }
-    // }
-
     public function store(Request $request)
     {
         if (!auth()->user()->tokenCan("memo-payment:add")) {
@@ -143,19 +53,17 @@ class PaymentController extends Controller
             ], 403);
         }
 
-        $currentYear = date('y');
-        $findLastPaymentDate = Payment::select("payment_date")->latest()->first();
-        $lastPaymentDate = $findLastPaymentDate->date ?? now();
-        $lastPaymentYear = Carbon::parse($lastPaymentDate)->format('y');
-        if ($currentYear > $lastPaymentYear) {
-            $countPayment = 1;
-        } else {
-            $countPayment = Payment::query()
-                ->where("payment_date", ">=", date('Y') . "-01-01")
-                ->where("payment_date", "<=", date('Y') . "-12-31")
-                ->count() + 1;
-        }
-        $sppNo = 'KLIK/OPR/MP/' . date("m") . '/' . $currentYear . '/' . $countPayment;
+        $month = now()->format('m');
+        $year = now()->format('y');
+        $prefix = 'KLIK/OPR/MP/' .  $month  . '/' . $year . '/';
+
+        $lastSpp = Payment::select("spp_no")
+            ->where('spp_no', 'ilike', "$prefix%")
+            ->orderBy('spp_no', 'desc')
+            ->first();
+
+        $countSpp = $lastSpp ? (int) Str::after($lastSpp->spp_no, $prefix) + 1 : '01';
+        $sppNo = $prefix . $countSpp;
 
         DB::beginTransaction();
 
@@ -190,14 +98,45 @@ class PaymentController extends Controller
 
             $sql->spps()->createMany($customers);
 
-            $sql->pv()->create([
-                "supplier_id" => 1,
-                "supplier_account_id" => 1,
-                "pv_amount" => $totalAmount,
-                "status" => "NEW",
-                "trx_dtl_id" => 2,
-                "created_by" => auth()->id(),
+            // $sql->pv()->create([
+            //     "supplier_id" => 1,
+            //     "supplier_account_id" => 1,
+            //     "pv_amount" => $totalAmount,
+            //     "status" => "NEW",
+            //     "trx_dtl_id" => 2,
+            //     "created_by" => auth()->id(),
+            // ]);
+
+            $invoice = Invoice::create([
+                'date' => now(),
+                'invoice_no' => $sppNo,
+                'trx_id' => 2,
+                'supplier_id' => 1,
+                'payment_method' => 'BANK',
+                'supplier_account_id' => 1,
+                'description' => 'PELUNASAN FIF',
+                'total_amount' => $totalAmount,
+                'status' => 'REQUEST',
+                'created_by' => $authId,
+                'updated_at' => null,
             ]);
+            $invoice->details()->create([
+                'invoice_id' => $invoice->id,
+                'inv_coa_id' => 58,
+                'description' => "PELUNASAN FIF",
+                'item_amount' => $totalAmount,
+                'pph_id' => null,
+                'pph_amount' => 0,
+                'ppn_rate' => 0,
+                'ppn_amount' => 0,
+                'rv_id' => null,
+                'total_amount' => $totalAmount,
+                'created_by' => $authId,
+                'created_at' => now(),
+                'updated_at' => null,
+            ]);
+            
+            (new WorkflowService($invoice));
 
             DB::commit();
 
@@ -234,6 +173,30 @@ class PaymentController extends Controller
             "spps.spp.details.unit",
             "spps.spp.details.unit.auction",
         ]));
+    }
+
+    public function showInbox(Request $request)
+    {
+        if (!auth()->user()->tokenCan("memo-payment:read")) {
+            return response()->json([
+                "success" => false,
+                "message" => "Unauthorized",
+            ], 403);
+        }
+
+        $query = Payment::query()
+            ->with([
+                "spps",
+                "spps.spp",
+                "spps.spp.customer",
+                "spps.spp.details",
+                "spps.spp.details.unit",
+                "spps.spp.details.unit.auction",
+            ])
+            ->where("spp_no", $request->invoice_no)
+            ->first();
+
+        return new GetResource($query);
     }
 
     /**

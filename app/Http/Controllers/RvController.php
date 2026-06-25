@@ -75,7 +75,7 @@ class RvController extends Controller
             $prefix = 'RV' . $year;
 
             $lastRv = RV::select("rv_no")
-                ->where('rv_no', 'like', $prefix . '%')
+                ->where('rv_no', 'ilike', "$prefix%")
                 ->latest('rv_no')
                 ->first();
 
