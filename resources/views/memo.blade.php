@@ -112,25 +112,45 @@
                 <thead>
                     <tr>
                         <th>Mengajukan,</th>
-                        <th>Mengetahui,</th>
-                        <th>Menyetujui,</th>
+                        @if (count($approvals) > 2)
+                            <th colspan="2">Mengetahui,</th>
+                            <th colspan="2">Menyetujui,</th>
+                        @else
+                            <th>Mengetahui,</th>
+                            <th>Menyetujui,</th>
+                        @endif
                     </tr>
                 </thead>
+
+                <tbody>
+                    <tr class="text-center">
+                        <td></td>
+                        @foreach ($approvals as $approval)
+                            <td>{!! $approval['signature'] !!}</td>
+                        @endforeach
+                    </tr>
+
+                    <tr class="text-center">
+                        @if (count($approvals) == 0)
+                            <td style="height:200px; font-weight: bold">({{ $from }})</td>
+                            <td style="height: 200px;">(..............................)</td>
+                            <td style="height: 200px;">(..............................)</td>
+                            <td style="height: 200px;">(..............................)</td>
+                            <td style="height: 200px;">(..............................)</td>
+                        @else
+                            <td style="font-weight: bold">({{ $from }})</td>
+                        @endif
+
+                        @foreach ($approvals as $approval)
+                            @if ($approval['signature'] == null)
+                                <td style="height: 200px; font-weight: bold">({{ $approval['name'] }})</td>
+                            @else
+                                <td style="font-weight: bold">({{ $approval['name'] }})</td>
+                            @endif
+                        @endforeach
+                    </tr>
+                </tbody>
             </table>
-
-            <br />
-
-            <div class="mt-14">
-                <table class="w-full">
-                    <tbody>
-                        <tr class="text-center">
-                            <td>SUR</td>
-                            <td>RUS</td>
-                            <td>JAR</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
         </div>
     </div>
 </body>
