@@ -138,7 +138,7 @@ class PaymentVoucherController extends Controller
                     $ledger[] = $credit;
 
                     $sppNo = $pv->processable->invoice_no;
-                    $spp  = Payment::select("id", "spp_no")
+                    $spp = Payment::select("id", "spp_no")
                         ->with("spps")
                         ->where("spp_no", $sppNo)
                         ->first();
@@ -147,6 +147,10 @@ class PaymentVoucherController extends Controller
                     Spp::whereIn("id", $sppIds)->update([
                         "status" => "PAID",
                         "updated_at" => null
+                    ]);
+
+                    $spp->update([
+                        "status" => "PAID",
                     ]);
                 } else {
                     foreach ($pv->processable->details as $detail) {
