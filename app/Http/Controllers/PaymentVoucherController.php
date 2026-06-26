@@ -11,6 +11,7 @@ use App\Models\ByadDetail;
 use App\Models\ByadHeader;
 use App\Models\ByadPayment;
 use App\Models\GL;
+use App\Models\Payment;
 use App\Models\PaymentVoucher;
 use App\Models\RV;
 use App\Models\Settlement;
@@ -136,7 +137,13 @@ class PaymentVoucherController extends Controller
                     $ledger[] = $debit;
                     $ledger[] = $credit;
 
-                    $sppIds = $pv->processable->spps->load("spp")->pluck("spp.id");
+                    $sppNo = $pv->processable->invoice_no;
+                    $spp  = Payment::select("id", "spp_no")
+                        ->with("spps")
+                        ->where("spp_no", $sppNo)
+                        ->first();
+                    $sppIds = $spp->spps->pluck("spp_id");
+
                     Spp::whereIn("id", $sppIds)->update([
                         "status" => "PAID",
                         "updated_at" => null
