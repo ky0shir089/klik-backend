@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Jobs\ProcessRvImportJob;
 use App\Models\Auction;
 use App\Models\Customer;
 use App\Models\GL;
@@ -94,19 +93,14 @@ class UploadRvController extends Controller
                 $prefix = 'RV' . $year;
 
                 $lastRv = RV::select("rv_no")
-                    ->where('rv_no', 'like', $prefix . '%')
+                    ->where('rv_no', 'ilike', $prefix . '%')
                     ->latest('rv_no')
                     ->first();
 
-                $count_rv = 1;
-                if ($lastRv) {
-                    $lastSequence = (int) Str::after($lastRv->rv_no, $prefix);
-                    $count_rv = $lastSequence + 1;
-                }
+                $countRv = $lastRv ? (int) Str::after($lastRv->rv_no, $prefix) + 1 : 1;
+                $rv_no = $prefix . Str::padLeft($countRv, 5, '0');
 
                 $authId = auth()->id();
-
-                // ProcessRvImportJob::dispatch($excel_data, $year, $count_rv, $authId);
 
                 foreach ($excel_data as $date => $chunk) {
                     $response = Http::withHeaders([
@@ -187,7 +181,7 @@ class UploadRvController extends Controller
                         $glInsert = [];
 
                         foreach ($rvRows as $row) {
-                            $glNo = $prefix . Str::padLeft($count_rv, 5, '0');
+                            $glNo = $rv_no;
                             // ✔ aggregate both debit + credit into one insert batch
                             $glInsert[] = [
                                 "gl_no" => $glNo,
@@ -218,7 +212,7 @@ class UploadRvController extends Controller
                             $customerName = Str::replace("KLIKLELANG-", "", $row["customer_name"]);
 
                             $rvInsert[] = [
-                                "rv_no" => $prefix . Str::padLeft($count_rv++, 5, '0'),
+                                "rv_no" => $rv_no,
                                 "date" => Carbon::parse($row["payment_date"]),
                                 "type_trx_id" => 1,
                                 "description" => 'Terima Titipan Pelunasan#' . $row["va_number"] . "_" . $customerName,
