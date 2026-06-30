@@ -76,6 +76,7 @@ class RvController extends Controller
 
             $lastRv = RV::select("rv_no")
                 ->where('rv_no', 'ilike', "$prefix%")
+                ->latest('id')
                 ->latest('rv_no')
                 ->first();
 

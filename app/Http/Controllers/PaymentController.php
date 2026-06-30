@@ -59,6 +59,7 @@ class PaymentController extends Controller
 
         $lastSpp = Payment::select("spp_no")
             ->where('spp_no', 'ilike', "$prefix%")
+            ->latest('id')
             ->orderBy('spp_no', 'desc')
             ->first();
 

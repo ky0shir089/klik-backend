@@ -133,6 +133,7 @@ class InvoiceController extends Controller
             $lastInv = Invoice::select("invoice_no")
                 ->whereNotNull("invoice_no")
                 ->where('invoice_no', 'ilike', "$prefix%")
+                ->latest('id')
                 ->latest('invoice_no')
                 ->first();
 
