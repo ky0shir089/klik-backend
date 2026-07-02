@@ -1,3 +1,6 @@
+body {
+    font-size: 10px;
+}
 .min-h-screen {
     min-height: 100vh;
 }
@@ -55,7 +58,7 @@
 }
 .text-xs {
     font-size: 12px;
-    line-height: 1.333333;
+    line-height: 1;
 }
 .fixed-width {
     table-layout: fixed;

@@ -59,13 +59,15 @@ class GeneralLedgerController extends Controller
 
         try {
             $year = Carbon::parse($request->date)->format('y');
-            $seq = GL::select("gl_no")
-                ->where('gl_no', 'ilike', 'JV%' . $year . '%')
-                ->groupBy("gl_no")
-                ->get()
-                ->count();
+            $prefix = 'JV' . $year;
 
-            $gl_no = 'JV' . $year . Str::padLeft($seq + 1, 5, '0');
+            $lastGl = GL::select("gl_no")
+                ->where('gl_no', 'ilike', "$prefix%")
+                ->latest('id')
+                ->first();
+
+            $countRv = $lastGl ? (int) Str::after($lastGl->gl_no, $prefix) + 1 : 1;
+            $gl_no = $prefix . Str::padLeft($countRv, 5, '0');
 
             $authId = auth()->id();
 

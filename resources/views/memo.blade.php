@@ -67,13 +67,13 @@
                     @foreach ($groups as $branch => $branches)
                         @foreach ($branches as $date => $unit)
                             <tr>
-                                <td class="p-1 text-xs border-black">{{ $index++ }}</td>
-                                <td class="p-1 text-xs border-black">{{ $branch }}</td>
-                                <td class="p-1 text-xs text-center border-black">{{ $unit->count() }}</td>
-                                <td class="p-1 text-xs text-right border-black">
+                                <td class="p-1 border-black">{{ $index++ }}</td>
+                                <td class="p-1 border-black">{{ $branch }}</td>
+                                <td class="p-1 text-center border-black">{{ $unit->count() }}</td>
+                                <td class="p-1 text-right border-black">
                                     {{ Number::format($unit->sum('price') + $unit->sum('ticket_price')) }}
                                 </td>
-                                <td class="p-1 text-xs border-black">
+                                <td class="p-1 border-black">
                                     PELUNASAN FIF_KLIK EVENT
                                     {{ $date }}
                                 </td>
@@ -84,14 +84,14 @@
 
                 <tfoot>
                     <tr>
-                        <th colspan="2" class="p-1 text-xs border-black text-center">Total</th>
-                        <th class="p-1 text-xs border-black text-center">
+                        <th colspan="2" class="p-1 border-black text-center">Total</th>
+                        <th class="p-1 border-black text-center">
                             {{ $total_unit }}
                         </th>
-                        <th class="p-1 text-xs border-black text-right">
+                        <th class="p-1 border-black text-right">
                             {{ Number::format($total_amount) }}
                         </th>
-                        <th class="p-1 text-xs border-black"></th>
+                        <th class="p-1 border-black"></th>
                     </tr>
                 </tfoot>
             </table>
