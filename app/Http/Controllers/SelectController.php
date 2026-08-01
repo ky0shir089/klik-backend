@@ -25,6 +25,7 @@ use App\Models\Supplier;
 use App\Models\TypeTrx;
 use App\Models\Unit;
 use App\Models\User;
+use App\Models\Xendit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -349,6 +350,17 @@ class SelectController extends Controller
         $query = InvoiceExternal::select("id", "invoice_external_no", "grand_total", "description")
             ->where("status", "OPEN")
             ->oldest("id")
+            ->get();
+
+        return new GetResource($query);
+    }
+
+    public function xendit()
+    {
+        $query = RV::select("id", "date", "ending_balance", "journal_number")
+            ->where("status", "NEW")
+            ->where("journal_number", "ilike", "XENDIT%")
+            ->latest("id")
             ->get();
 
         return new GetResource($query);

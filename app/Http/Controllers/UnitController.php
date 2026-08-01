@@ -64,7 +64,7 @@ class UnitController extends Controller
                 foreach ($rvs as $rv) {
                     $rv->used_balance = $rv->used_balance - $unit->price;
                     $rv->admin_fee = $rv->admin_fee - $unit->admin_fee;
-                    $rv->ending_balance = $rv->starting_balance - $rv->used_balance - $rv->admin_fee;
+                    $rv->ending_balance = $rv->starting_balance - $rv->used_balance - $rv->admin_fee - $rv->xendit_fee;
                     $rv->status = "NEW";
                     $rv->save();
                 }

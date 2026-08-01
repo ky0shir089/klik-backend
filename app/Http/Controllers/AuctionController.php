@@ -11,6 +11,7 @@ use App\Models\Auction;
 use App\Models\Customer;
 use App\Models\Transaction;
 use App\Models\Unit;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -68,10 +69,11 @@ class AuctionController extends Controller
 
         //dev
         // $response = Http::withHeaders([
-        //     'Authorization' => 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJjbGllbnRfaWQiOjE1NDkyLCJjbGllbnRfcGxhdGZvcm0iOiJtb2JpbGUiLCJjbGllbnRfcm9sZSI6InVzZXIiLCJjbGllbnRfdHlwZSI6InJlZ3VsZXIiLCJleHAiOjIwODYxNjE3NDN9.y5hCDLImOq_IdjhysSMGYWjUJTn-YSkff-0zZ-5OdQ8',
+        //     'Authorization' => 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJjbGllbnRfaWQiOjE1NTA3LCJjbGllbnRfcGxhdGZvcm0iOiJtb2JpbGUiLCJjbGllbnRfcm9sZSI6InVzZXIiLCJjbGllbnRfdHlwZSI6InJlZ3VsZXIiLCJleHAiOjIwODYxNjE3NDN9.agXJOdVofDxZ8QP6ZG2AK__iVcUdBXF0GLZPZUnW_MM',
         // ])->get('https://api.devlmu.com/kliklelang/report/api/report/v3/hasil_lelang', [
         //     'date_start' => $request->auction_date,
         //     'date_end' => $request->auction_date,
+        //     'id_mst_pembayaran_status' => 2
         // ]);
 
         if (!isset($response["data"])) {
@@ -98,8 +100,8 @@ class AuctionController extends Controller
                     'ktp' => $customer["identitas_ktp"],
                     'name' => $customer["nama_ktp"],
                     'va_number' => $customer["nomor_va"],
-                    'phone' => $customer["nomor_hp"],
-                    'address' => $customer["alamat_ktp"],
+                    'phone' => $customer["nomor_hp"] ?? null,
+                    'address' => $customer["alamat_ktp"] ?? null,
                     'created_by' => $authId,
                     'updated_at' => null
                 ];
@@ -118,7 +120,9 @@ class AuctionController extends Controller
 
                     foreach ($lelang['unit'] as $unit) {
                         $hargaTerbentuk = $unit['harga'] - $unit['potongan_tiket'];
-                        $byadAmount = round($hargaTerbentuk * 0.006);
+                        $titipanByad = round($hargaTerbentuk * 0.006);
+                        $byadAmount = $titipanByad > 150000 ? 150000 : $titipanByad;
+                        $adminAmount = $unit['biaya_admin'] - $byadAmount < 0 ? 0 : $unit['biaya_admin'] - $byadAmount;
                         $feeAmount = round($hargaTerbentuk * 0.03);
                         $pphAmount = round($feeAmount * 0.02);
                         $netAmount = $feeAmount - $pphAmount;
@@ -136,7 +140,7 @@ class AuctionController extends Controller
                             'admin_fee' => $unit['biaya_admin'],
                             'final_price' => $unit['harga_total'],
                             'byad_amount' => $byadAmount,
-                            'admin_amount' => $unit['biaya_admin'] - $byadAmount,
+                            'admin_amount' => $adminAmount,
                             'fee_amount' => $feeAmount,
                             'pph_amount' => $pphAmount,
                             'net_amount' => $netAmount,
@@ -145,6 +149,8 @@ class AuctionController extends Controller
                             'color' => $unit['warna'],
                             'year' => $unit['tahun'],
                             'no_lot' => $lelang['no_lot'],
+                            'reference_id' => $unit['refference_id'] == "-" ? null : $unit['refference_id'],
+                            'paid_date' => Carbon::parse($unit['tanggal_pembayaran'])->format("Y-m-d H:i:s"),
                             'created_by' => $authId,
                             'updated_at' => null
                         ];
@@ -165,7 +171,8 @@ class AuctionController extends Controller
                 }
             }
 
-            $uniqueUnits = collect($units)->reverse()->unique("klik_unit_id")->reverse()->values()->toArray();
+            $unitCollection = collect($units);
+            $uniqueUnits = $unitCollection->reverse()->unique("klik_unit_id")->reverse()->values()->toArray();
 
             Customer::upsert($customers, ["klik_bidder_id"]);
             Auction::upsert($auctions, ["customer_id", "klik_auction_id"]);

@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\GetResource;
-use App\Http\Resources\UpdateResource;
 use App\Models\Spp;
 use App\Models\SppDetail;
 use App\Models\Unit;
@@ -41,7 +40,7 @@ class SppV2Controller extends Controller
 
         //dev
         // $response = Http::withHeaders([
-        //     'Authorization' => 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJjbGllbnRfaWQiOjE1NTM0LCJjbGllbnRfcGxhdGZvcm0iOiJtb2JpbGUiLCJjbGllbnRfcm9sZSI6ImJhbGFuZyIsImNsaWVudF90eXBlIjoiaGVhZG9mZmljZSIsImV4cCI6MTc3NDE3MDE2Mn0.7z0DOfonq1UFGpMWNUBtNglxiSGYjKU0xlnmJ9nCagQ',
+        //     'Authorization' => 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJjbGllbnRfaWQiOjE1NTA3LCJjbGllbnRfcGxhdGZvcm0iOiJtb2JpbGUiLCJjbGllbnRfcm9sZSI6InVzZXIiLCJjbGllbnRfdHlwZSI6InJlZ3VsZXIiLCJleHAiOjIwODYxNjE3NDN9.agXJOdVofDxZ8QP6ZG2AK__iVcUdBXF0GLZPZUnW_MM',
         // ])->get('https://api.devlmu.com/kliklelang/transaksi/api/transaksi/v5/spp/list', [
         //     'id_mst_status_spp' => 1,
         //     'limit' => $rows,
@@ -94,7 +93,7 @@ class SppV2Controller extends Controller
 
         //dev
         // $response = Http::withHeaders([
-        //     'Authorization' => 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJjbGllbnRfaWQiOjE1NTM0LCJjbGllbnRfcGxhdGZvcm0iOiJtb2JpbGUiLCJjbGllbnRfcm9sZSI6ImJhbGFuZyIsImNsaWVudF90eXBlIjoiaGVhZG9mZmljZSIsImV4cCI6MTc3NDE3MDE2Mn0.7z0DOfonq1UFGpMWNUBtNglxiSGYjKU0xlnmJ9nCagQ',
+        //     'Authorization' => 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJjbGllbnRfaWQiOjE1NTA3LCJjbGllbnRfcGxhdGZvcm0iOiJtb2JpbGUiLCJjbGllbnRfcm9sZSI6InVzZXIiLCJjbGllbnRfdHlwZSI6InJlZ3VsZXIiLCJleHAiOjIwODYxNjE3NDN9.agXJOdVofDxZ8QP6ZG2AK__iVcUdBXF0GLZPZUnW_MM',
         // ])->get('https://api.devlmu.com/kliklelang/transaksi/api/transaksi/v5/spp/detail/' . $request->sppV2);
 
         if ($response->forbidden()) {
@@ -172,7 +171,7 @@ class SppV2Controller extends Controller
 
             //dev
             // $response = Http::withHeaders([
-            //     'Authorization' => 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJjbGllbnRfaWQiOjE1NTM0LCJjbGllbnRfcGxhdGZvcm0iOiJtb2JpbGUiLCJjbGllbnRfcm9sZSI6ImJhbGFuZyIsImNsaWVudF90eXBlIjoiaGVhZG9mZmljZSIsImV4cCI6MTc3NDE3MDE2Mn0.7z0DOfonq1UFGpMWNUBtNglxiSGYjKU0xlnmJ9nCagQ',
+            //     'Authorization' => 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJjbGllbnRfaWQiOjE1NTA3LCJjbGllbnRfcGxhdGZvcm0iOiJtb2JpbGUiLCJjbGllbnRfcm9sZSI6InVzZXIiLCJjbGllbnRfdHlwZSI6InJlZ3VsZXIiLCJleHAiOjIwODYxNjE3NDN9.agXJOdVofDxZ8QP6ZG2AK__iVcUdBXF0GLZPZUnW_MM',
             // ])->post('https://api.devlmu.com/kliklelang/transaksi/api/transaksi/v5/siskeu/sync-status', [
             //     'spp_id' => $request->spp_id,
             //     'status' => $request->status,

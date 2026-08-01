@@ -26,6 +26,7 @@ class RV extends Model
         'customer_id',
         'invoiceable_type',
         'invoiceable_id',
+        'xendit_fee',
         'created_by',
         'updated_by',
         'updated_at'

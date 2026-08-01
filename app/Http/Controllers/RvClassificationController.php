@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\RvClassificationRequest;
+use App\Http\Requests\VaInstantRequest;
 use App\Http\Resources\GetResource;
 use App\Models\Customer;
 use App\Models\GL;
@@ -12,8 +13,6 @@ use App\Models\Unit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-
-use function Laravel\Prompts\info;
 
 class RvClassificationController extends Controller
 {
@@ -100,207 +99,18 @@ class RvClassificationController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    // public function store(RvClassificationRequest $request)
-    // {
-    //     if (!auth()->user()->tokenCan("rv-classification:add")) {
-    //         return response()->json([
-    //             "success" => false,
-    //             "message" => "Unauthorized",
-    //         ], 403);
-    //     }
-
-    //     $units = $request->units;
-    //     $rvs = $request->rvs;
-
-    //     $authId = auth()->id();
-
-    //     $totalAmount = 0;
-    //     $totalRv = 0;
-
-    //     $classifications = [];
-
-    //     DB::transaction(function () use ($units, $rvs, $authId, &$totalAmount, &$totalRv, $classifications) {
-    //         foreach ($units as $unit) {
-    //             $unitData = Unit::find($unit);
-    //             $totalAmount = $totalAmount + $unitData->final_price;
-
-    //             foreach ($rvs as $rv) {
-    //                 $rvData = RV::find($rv);
-    //                 if ($rvData->ending_balance == 0) continue;
-    //                 $totalRv += $rvData->ending_balance;
-
-    //                 $calculate = $rvData->ending_balance - $unitData->final_price;
-
-    //                 $classifications[] = [
-    //                     "unit_id" => $unit,
-    //                     "rv_id" => $rv,
-    //                     "rv_amount" => $rvData->ending_balance,
-    //                     "unit_final_price" => $unitData->final_price,
-    //                     "rv_balance" => $calculate < 0 ? 0 : $calculate,
-    //                     "created_by" => $authId,
-    //                     "created_at" => now(),
-    //                 ];
-
-    //                 if ($totalAmount > $totalRv) {
-    //                     info("totalAmount > totalRv");
-    //                     info($totalAmount);
-    //                     $rvData->used_balance = $rvData->used_balance + $rvData->ending_balance;
-    //                     $rvData->ending_balance = $rvData->ending_balance - $rvData->used_balance;
-    //                     $rvData->status = $rvData->ending_balance == 0 ? "CLOSED" : "NEW";
-    //                     $rvData->updated_by = $authId;
-    //                     $rvData->save();
-    //                     info($rvData);
-
-    //                     $totalAmount -= $rvData->used_balance;
-    //                     $totalRv -= $rvData->ending_balance;
-    //                     info($totalAmount);
-    //                 }
-
-    //                 if ($totalAmount <= $totalRv) {
-    //                     info("totalAmount <= totalRv");
-    //                     info($totalAmount);
-    //                     $rvData->used_balance = $rvData->used_balance + $totalAmount - $unitData->admin_fee;
-    //                     $rvData->admin_fee = $rvData->admin_fee + $unitData->admin_fee;
-    //                     $rvData->ending_balance = $rvData->starting_balance - $rvData->used_balance - $rvData->admin_fee < 0 ? 0 : $rvData->starting_balance - $rvData->used_balance - $rvData->admin_fee;
-    //                     $rvData->status = $rvData->ending_balance == 0 ? "CLOSED" : "NEW";
-    //                     $rvData->updated_by = $authId;
-    //                     $rvData->save();
-    //                     info($rvData);
-
-    //                     $totalAmount -= $rvData->used_balance + $rvData->admin_fee;
-    //                     info($totalAmount);
-
-    //                     if ($totalAmount <= 0 && $rvData->ending_balance > 0) {
-    //                         $totalAmount = 0;
-    //                         break;
-    //                     };
-    //                 }
-    //             }
-
-    //             $unitData->payment_status = "LUNAS";
-    //             $unitData->updated_by = $authId;
-    //             $unitData->save();
-    //         }
-
-    //         RvClassification::insert($classifications);
-    //     });
-
-    //     return response()->json([
-    //         "success" => true,
-    //         "message" => "Rv classification created successfully"
-    //     ]);
-    // }
-
-    // public function store(RvClassificationRequest $request)
-    // {
-    //     if (!auth()->user()->tokenCan("rv-classification:add")) {
-    //         return response()->json([
-    //             "success" => false,
-    //             "message" => "Unauthorized",
-    //         ], 403);
-    //     }
-
-    //     $units = Unit::select("units.id", "price", "admin_fee", "final_price")
-    //         ->join('auctions', 'units.auction_id', '=', 'auctions.klik_auction_id')
-    //         ->whereIn("units.id", $request->units)
-    //         ->oldest("final_price")
-    //         ->oldest("auction_date")
-    //         ->oldest("id")
-    //         ->get();
-
-    //     $rvs = RV::select("id", "starting_balance", "used_balance", "admin_fee", "ending_balance")
-    //         ->whereIn("id", $request->rvs)
-    //         ->oldest("ending_balance")
-    //         ->oldest('date')
-    //         ->oldest('id')
-    //         ->get();
-
-    //     $authId = auth()->id();
-
-    //     $totalAmount = $units->sum("final_price");
-    //     $totalAdminFee = $units->sum("admin_fee");
-    //     $totalRv = $rvs->sum("ending_balance");
-    //     $amountNeeded = 0;
-    //     $diffBalance = 0;
-    //     $adminBalance = 0;
-
-    //     if ($totalRv < $totalAmount) {
-    //         return response()->json([
-    //             "success" => false,
-    //             "message" => "Jumlah RV Kurang",
-    //         ], 400);
-    //     }
-
-    //     DB::transaction(function () use ($units, $rvs, $authId, $totalAdminFee, &$amountNeeded, &$diffBalance, &$adminBalance) {
-    //         foreach ($units as $unit) {
-    //             $amountNeeded += $unit->price;
-    //             foreach ($rvs as $rv) {
-    //                 if ($rv->ending_balance <= 0) continue;
-    //                 if ($amountNeeded >= $rv->ending_balance) {
-    //                     $rv->used_balance += $rv->ending_balance;
-    //                     $amountNeeded -= $rv->ending_balance;
-    //                 } else {
-    //                     $rv->used_balance += $amountNeeded;
-    //                     $amountNeeded -= $amountNeeded;
-    //                 }
-
-    //                 $calculate = $rv->ending_balance - $unit->final_price;
-
-    //                 $classifications[] = [
-    //                     "unit_id" => $unit->id,
-    //                     "rv_id" => $rv->id,
-    //                     "rv_amount" => $rv->ending_balance,
-    //                     "unit_final_price" => $unit->final_price,
-    //                     "rv_balance" => $calculate < 0 ? 0 : $calculate,
-    //                     "created_by" => $authId,
-    //                     "created_at" => now(),
-    //                 ];
-
-    //                 $rv->admin_fee = $totalAdminFee == $adminBalance ? $rv->admin_fee : $rv->admin_fee + $unit->admin_fee;
-    //                 $diffBalance = $rv->starting_balance - $rv->used_balance - $rv->admin_fee;
-    //                 if ($diffBalance < 0) {
-    //                     $rv->used_balance += $diffBalance;
-    //                     $amountNeeded -= $diffBalance;
-    //                 }
-    //                 $rv->ending_balance = $rv->starting_balance - $rv->used_balance - $rv->admin_fee;
-    //                 $adminBalance += $unit->admin_fee;
-
-    //                 if ($amountNeeded <= 0) {
-    //                     break;
-    //                 }
-    //             }
-
-    //             $unit->payment_status = "LUNAS";
-    //             $unit->updated_by = $authId;
-    //             $unit->save();
-    //         }
-
-    //         RvClassification::insert($classifications);
-
-    //         foreach ($rvs as $rv) {
-    //             $rv->status = $rv->ending_balance == 0 ? "CLOSED" : "NEW";
-    //             $rv->updated_by = $authId;
-    //             $rv->save();
-    //         }
-    //     });
-
-    //     return response()->json([
-    //         "success" => true,
-    //         "message" => "Rv classification created successfully"
-    //     ]);
-    // }
-
     public function store(RvClassificationRequest $request)
     {
-        if (! auth()->user()->tokenCan('rv-classification:add')) {
+        if (!auth()->user()->tokenCan('rv-classification:add')) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unauthorized',
             ], 403);
         }
 
-        $units = Unit::select('units.id', 'price', 'admin_fee', 'final_price', 'byad_amount', 'fee_amount')
+        $units = Unit::select('units.id', 'engine_number', 'price', 'admin_fee', 'final_price', 'va_number')
             ->join('auctions', 'units.auction_id', '=', 'auctions.klik_auction_id')
+            ->join('customers', 'auctions.customer_id', '=', 'customers.klik_bidder_id')
             ->whereIn('units.id', $request->units)
             ->oldest('final_price')
             ->oldest('auction_date')
@@ -330,6 +140,7 @@ class RvClassificationController extends Controller
             $classifications = [];
             $rvUsedAmounts = []; // Track how much price amount each RV covers
             $rvAdminFees = []; // Track how much admin fee each RV covers
+            $glInsert = [];
 
             // Initialize tracking arrays
             foreach ($rvs as $rv) {
@@ -386,14 +197,48 @@ class RvClassificationController extends Controller
                     ];
                 }
 
-                $unitByadAmount = round($totalPriceUsed * 0.006);
-                $unitFeeAmount = $totalAdminFeeUsed - $unitByadAmount;
-
                 $unit->payment_status = 'LUNAS';
                 $unit->updated_by = $authId;
-                $unit->byad_amount = $unitByadAmount;
-                $unit->fee_amount = $unitFeeAmount;
                 $unit->save();
+
+                $glInsert[] = [
+                    "gl_no" => "AR #" . $unit->va_number,
+                    "date" => now(),
+                    "type" => 'IN',
+                    "description" => "AR Bidder #" . $unit->va_number,
+                    "coa_id" => 157,
+                    "debit" => $unit->final_price,
+                    "credit" => 0,
+                    "created_by" => $authId,
+                    "created_at" => now(),
+                    "updated_at" => null,
+                ];
+
+                $glInsert[] = [
+                    "gl_no" => "AR #" . $unit->va_number,
+                    "date" => now(),
+                    "type" => 'IN',
+                    "description" => "Terima Titipan Pelunasan #" . $unit->va_number,
+                    "coa_id" => 58,
+                    "debit" => 0,
+                    "credit" => $unit->price,
+                    "created_by" => $authId,
+                    "created_at" => now(),
+                    "updated_at" => null,
+                ];
+
+                $glInsert[] = [
+                    "gl_no" => "AR #" . $unit->va_number,
+                    "date" => now(),
+                    "type" => 'IN',
+                    "description" => "Terima Titipan Admin #" . $unit->va_number,
+                    "coa_id" => 59,
+                    "debit" => 0,
+                    "credit" => $unit->admin_fee,
+                    "created_by" => $authId,
+                    "created_at" => now(),
+                    "updated_at" => null,
+                ];
             }
 
             // Apply all RV updates
@@ -409,6 +254,179 @@ class RvClassificationController extends Controller
                 $rv->save();
             }
 
+            GL::insert($glInsert);
+            RvClassification::insert($classifications);
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Rv classification created successfully',
+        ]);
+    }
+
+    public function vaInstant(VaInstantRequest $request)
+    {
+        if (!auth()->user()->tokenCan('rv-classification:add')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized',
+            ], 403);
+        }
+
+        DB::transaction(function () use ($request) {
+            $authId = auth()->id();
+
+            $rv = RV::findOrFail($request->rv_id);
+
+            $references = Unit::select("id", "price", "admin_fee", "final_price", "reference_id", "paid_date")
+                ->whereIn("reference_id", $request->references);
+            $references->update([
+                "payment_status" => "LUNAS",
+                "updated_by" => $authId,
+            ]);
+            $units = $references->get();
+            $transactions = $references->select("reference_id", "paid_date", DB::raw("SUM(price) as sum_price, SUM(admin_fee) as sum_admin_fee, SUM(final_price) as sum_final_price"))
+                ->oldest("paid_date")
+                ->groupBy("reference_id", "paid_date")
+                ->get();
+
+            $titipanPelunasan = 0;
+            $titipanAdmin = 0;
+
+            $glInsert[] = [
+                "gl_no" => $rv->rv_no,
+                "date" => $rv->date,
+                "type" => 'IN',
+                "description" => 'PELUNASAN #' . $rv->journal_number,
+                "coa_id" => 8,
+                "debit" => $rv->starting_balance,
+                "credit" => 0,
+                "created_by" => $authId,
+                "created_at" => now(),
+                "updated_at" => null,
+            ];
+
+            $glInsert[] = [
+                "gl_no" => $rv->rv_no,
+                "date" => $rv->date,
+                "type" => 'IN',
+                "description" => 'PELUNASAN #' . $rv->journal_number,
+                "coa_id" => 58,
+                "debit" => 0,
+                "credit" => $rv->starting_balance,
+                "created_by" => $authId,
+                "created_at" => now(),
+                "updated_at" => null,
+            ];
+
+            foreach ($units as $unit) {
+                $rv->used_balance += $unit->price;
+                $rv->admin_fee += $unit->admin_fee;
+                $rv->ending_balance = $rv->starting_balance - $rv->used_balance - $rv->admin_fee;
+
+                $titipanPelunasan += $unit->price;
+                $titipanAdmin += $unit->admin_fee;
+
+                $classifications[] = [
+                    'unit_id' => $unit->id,
+                    'rv_id' => $rv->id,
+                    'rv_amount' => $rv->ending_balance,
+                    'unit_final_price' => $unit->final_price,
+                    'rv_balance' => $rv->ending_balance,
+                    'created_by' => $authId,
+                    'created_at' => now(),
+                ];
+            }
+
+            foreach ($transactions as $transaction) {
+                $glInsert[] = [
+                    "gl_no" => $transaction->reference_id,
+                    "date" => now(),
+                    "type" => 'IN',
+                    "description" => "AR Pelunasan #" . $transaction->reference_id,
+                    "coa_id" => 158,
+                    "debit" => $transaction->sum_final_price,
+                    "credit" => 0,
+                    "created_by" => $authId,
+                    "created_at" => now(),
+                    "updated_at" => null,
+                ];
+
+                $glInsert[] = [
+                    "gl_no" => $transaction->reference_id,
+                    "date" => now(),
+                    "type" => 'IN',
+                    "description" => "Terima Titipan Pelunasan #" . $transaction->reference_id,
+                    "coa_id" => 58,
+                    "debit" => 0,
+                    "credit" => $transaction->sum_price,
+                    "created_by" => $authId,
+                    "created_at" => now(),
+                    "updated_at" => null,
+                ];
+
+                $glInsert[] = [
+                    "gl_no" => $transaction->reference_id,
+                    "date" => now(),
+                    "type" => 'IN',
+                    "description" => "Terima Titipan Admin #" . $transaction->reference_id,
+                    "coa_id" => 59,
+                    "debit" => 0,
+                    "credit" => $transaction->sum_admin_fee,
+                    "created_by" => $authId,
+                    "created_at" => now(),
+                    "updated_at" => null,
+                ];
+
+                $glInsert[] = [
+                    "gl_no" => $transaction->reference_id,
+                    "date" => now(),
+                    "type" => 'IN',
+                    "description" => "Pendapatan Lain-lain #" . $transaction->reference_id,
+                    "coa_id" => 140,
+                    "debit" => 0,
+                    "credit" => 6000,
+                    "created_by" => $authId,
+                    "created_at" => now(),
+                    "updated_at" => null,
+                ];
+
+                $glInsert[] = [
+                    "gl_no" => $transaction->reference_id,
+                    "date" => now(),
+                    "type" => 'IN',
+                    "description" => "Biaya Aplikasi Xendit #" . $transaction->reference_id,
+                    "coa_id" => 159,
+                    "debit" => 4000,
+                    "credit" => 0,
+                    "created_by" => $authId,
+                    "created_at" => now(),
+                    "updated_at" => null,
+                ];
+
+                $glInsert[] = [
+                    "gl_no" => $transaction->reference_id,
+                    "date" => now(),
+                    "type" => 'IN',
+                    "description" => "PPn Masukan #" . $transaction->reference_id,
+                    "coa_id" => 151,
+                    "debit" => 440,
+                    "credit" => 0,
+                    "created_by" => $authId,
+                    "created_at" => now(),
+                    "updated_at" => null,
+                ];
+            }
+
+            $xenditFee = $rv->starting_balance - $titipanPelunasan - $titipanAdmin;
+            $rv->xendit_fee = $xenditFee;
+            $rv->ending_balance = $rv->ending_balance - $xenditFee;
+
+            $rv->status = 'CLOSED';
+            $rv->updated_by = $authId;
+            $rv->save();
+
+            GL::insert($glInsert);
             RvClassification::insert($classifications);
         });
 

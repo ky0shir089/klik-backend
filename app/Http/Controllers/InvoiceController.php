@@ -198,6 +198,8 @@ class InvoiceController extends Controller
             "wf_approval:processable_id,approve_count",
             "settlement:lpj_invoice_id,prepayment_pv_id,prepayment_pv_id",
             "settlement.pv:id,pv_no,pv_amount",
+            "paid_attachment",
+            "paid_attachment.attachment"
         ]));
     }
 

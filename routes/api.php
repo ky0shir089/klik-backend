@@ -18,6 +18,7 @@ use App\Http\Controllers\MemoInvoiceController;
 use App\Http\Controllers\MemoPaymentController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\ModuleController;
+use App\Http\Controllers\PaidAttachmentController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PaymentVoucherController;
 use App\Http\Controllers\PphController;
@@ -35,10 +36,10 @@ use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\TrxDetailController;
 use App\Http\Controllers\TypeTrxController;
 use App\Http\Controllers\UnitController;
-use App\Http\Controllers\UploadRvController;
 use App\Http\Controllers\UploadSppController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WorkflowHeaderController;
+use App\Http\Controllers\XenditController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -97,15 +98,17 @@ Route::middleware('auth:sanctum')
                     ->group(function () {
                         Route::resource('rv', RvController::class);
                         Route::resource('pv', PaymentVoucherController::class);
-                        Route::post('upload-rv', UploadRvController::class);
                         Route::resource('invoice', InvoiceController::class);
                         Route::resource('supplier', SupplierController::class);
                         Route::resource('rv-classification', RvClassificationController::class);
+                        Route::post('va-instant', [RvClassificationController::class, 'vaInstant']);
                         Route::get('invoice-inbox', [InvoiceController::class, 'inbox']);
                         Route::get('memo-invoice/{invoice}', MemoInvoiceController::class);
                         Route::resource('settlement', SettlementController::class);
                         Route::resource('invoice-external', InvoiceExternalController::class);
                         Route::get('memo-external/{invoiceExternal}', MemoExternalController::class);
+                        Route::resource('paid-attachment', PaidAttachmentController::class);
+                        Route::resource('xendit', XenditController::class);
                     });
 
                 Route::prefix('v2')
@@ -120,6 +123,7 @@ Route::middleware('auth:sanctum')
                     ->group(function () {
                         Route::resource('auction', AuctionController::class);
                         Route::resource('customer', CustomerController::class);
+                        Route::get('va-auto', [CustomerController::class, 'vaAuto']);
                         Route::resource('auction-customer', AuctionCustomerController::class);
                         Route::resource('payment', PaymentController::class);
                         Route::post('spp-inbox', [PaymentController::class, 'showInbox']);
@@ -168,6 +172,7 @@ Route::middleware('auth:sanctum')
                         Route::get('duplicate', [SelectController::class, 'findDuplicate']);
                         Route::get('money-in-transit', [SelectController::class, 'moneyInTransit']);
                         Route::get('external', [SelectController::class, 'external']);
+                        Route::get('xendit', [SelectController::class, 'xendit']);
                     });
             });
 
@@ -184,6 +189,7 @@ Route::middleware('auth:sanctum')
                         Route::post('report-prepayment', [ReportController::class, 'reportPrepayment']);
                         Route::post('list-unit-pelunasan', [ReportController::class, 'listUnitPelunasan']);
                         Route::post('report-invoice-external', [ReportController::class, 'reportInvoiceExternal']);
+                        Route::post('report-classification-auto', [ReportController::class, 'reportClassificationAuto']);
                     });
             });
 

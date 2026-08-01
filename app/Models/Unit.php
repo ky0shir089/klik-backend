@@ -39,6 +39,8 @@ class Unit extends Model
         'year',
         'no_lot',
         'pejabat_lelang',
+        'reference_id',
+        'paid_date',
         'created_by',
         'updated_by',
         'updated_at'

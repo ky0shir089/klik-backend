@@ -7,7 +7,9 @@ use App\Http\Resources\DeleteResource;
 use App\Http\Resources\GetResource;
 use App\Http\Resources\UpdateResource;
 use App\Models\Customer;
+use App\Models\Unit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class CustomerController extends Controller
 {
@@ -34,17 +36,20 @@ class CustomerController extends Controller
                     $query->where("payment_status", "UNPAID");
                 }
             ], "price")
-             ->withSum([
+            ->withSum([
                 "units" => function ($query) {
                     $query->where("payment_status", "UNPAID");
                 }
             ], "admin_fee")
-             ->withSum([
+            ->withSum([
                 "units" => function ($query) {
                     $query->where("payment_status", "UNPAID");
                 }
             ], "final_price")
-            ->whereRelation("units", "payment_status", "UNPAID")
+            ->whereHas("units", function ($query) {
+                $query->where("payment_status", "UNPAID")
+                    ->whereNull("reference_id");
+            })
             ->when($request->search, function ($query, $search) {
                 $query->whereAny([
                     "name",
@@ -57,6 +62,49 @@ class CustomerController extends Controller
                 $query->whereDoesntHave("rvs");
             })
             ->oldest("id")
+            ->paginate($request->size);
+
+        return new GetResource($query);
+    }
+
+    public function vaAuto(Request $request)
+    {
+        if (!auth()->user()->tokenCan("rv-classification:browse")) {
+            return response()->json([
+                "success" => false,
+                "message" => "Unauthorized",
+            ], 403);
+        }
+
+        $from = $request->from_date ? $request->from_date . ' 00:00:00' : null;
+        $to = $request->to_date ? $request->to_date . ' 23:59:59' : null;
+
+        $query =  Unit::select(
+            "customers.name",
+            "units.paid_date",
+            "units.reference_id",
+            DB::raw('COUNT(units.id) as total_units'),
+            DB::raw('SUM(price) as total_price'),
+            DB::raw('SUM(ticket_price) as total_ticket_price'),
+            DB::raw('SUM(admin_fee) as total_admin_fee'),
+            DB::raw('SUM(final_price) as total_final_price'),
+        )
+            ->join('auctions', 'units.auction_id', '=', 'auctions.klik_auction_id')
+            ->join('customers', 'auctions.customer_id', '=', 'customers.klik_bidder_id')
+            ->where("payment_status", "UNPAID")
+            ->whereNotNull("reference_id")
+            ->when($request->search, function ($query, $search) {
+                $query->whereAny([
+                    "customers.name",
+                    "units.reference_id",
+                    "units.police_number",
+                ], "ilike", "%$search%");
+            })
+            ->when($from || $to, function ($query) use ($from, $to) {
+                $query->whereBetween('units.paid_date', [$from, $to]);
+            })
+            ->oldest("units.paid_date")
+            ->groupBy("customers.name", "units.paid_date", "units.reference_id")
             ->paginate($request->size);
 
         return new GetResource($query);
@@ -84,7 +132,8 @@ class CustomerController extends Controller
 
         return new GetResource($customer->load([
             "units" => function ($query) {
-                $query->where("payment_status", "UNPAID")
+                $query->whereNull("reference_id")
+                    ->where("payment_status", "UNPAID")
                     ->oldest("id");
             },
             "units.auction" => function ($query) {

@@ -106,4 +106,9 @@ class Invoice extends Model
     {
         return $this->hasOne(Settlement::class, 'lpj_invoice_id', 'id');
     }
+
+    public function paid_attachment(): HasOne
+    {
+        return $this->hasOne(PaidAttachment::class, 'invoice_id', 'id');
+    }
 }

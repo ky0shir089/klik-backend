@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Invoice;
 use App\Services\AliasService;
+use App\Services\MergePdf;
 use App\Services\SignatureSvgService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
@@ -69,6 +70,24 @@ class MemoInvoiceController extends Controller
             'approvals' => $approvals,
         ];
 
-        return Pdf::loadView('invoice', $data)->download("memo-{$slug}.pdf");
+        if (isset($invoice->attachment)) {
+            $pdf = Pdf::loadView('invoice', $data);
+            $fileName = "memo-{$slug}.pdf";
+            $directory = storage_path('app/public/pdfs');
+            if (!file_exists($directory)) {
+                mkdir($directory, 0755, true);
+            }
+            $pdf->save($directory . '/' . $fileName);
+
+            $files[] = $directory . '/' . $fileName;
+            $files[] = storage_path("app/public/" . $invoice->attachment?->path);
+            $output = storage_path("app/public/pdfs/memo-{$slug}_merged.pdf");
+
+            (new MergePdf())->mergePdf($files, $output);
+
+            return response()->download($output, "memo-{$slug}.pdf");
+        } else {
+            return Pdf::loadView('invoice', $data)->download("memo-{$slug}.pdf");
+        }
     }
 }

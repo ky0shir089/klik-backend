@@ -11,6 +11,7 @@ use App\Models\Settlement;
 use App\Models\Unit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Rap2hpoutre\FastExcel\FastExcel;
 
@@ -130,6 +131,8 @@ class ReportController extends Controller
                 'Nomor Kontrak' => $row->contract_number,
                 'No PV' => $row->spp?->detail?->pv?->pv_no,
                 'Tgl PV' => $row->spp?->detail?->pv?->paid_date,
+                'Reference ID' => $row->reference_id,
+                'Paid Date' => $row->paid_date,
             ];
         };
 
@@ -672,5 +675,61 @@ class ReportController extends Controller
         $this->generateExcelReport($data, $columns, $id);
 
         return response()->download(storage_path('app/public/' . $id), "invoice-external-report.xlsx");
+    }
+
+    public function reportClassificationAuto(Request $request)
+    {
+        if (!auth()->user()->tokenCan("reporot-auction:download")) {
+            return response()->json([
+                "success" => false,
+                "message" => "Unauthorized",
+            ], 403);
+        }
+
+        $id = "reports/classification-auto/" . Str::random(6) . ".xlsx";
+        $directory = storage_path('app/public/reports/classification-auto');
+        if (!file_exists($directory)) {
+            mkdir($directory, 0755, true);
+        }
+        $from = $request->from_date . ' 00:00:00';
+        $to = $request->to_date . ' 23:59:59';
+
+        $data = Unit::select(
+            "customers.name",
+            "units.paid_date",
+            "units.reference_id",
+            DB::raw('COUNT(units.id) as total_units'),
+            DB::raw('SUM(price) as total_price'),
+            DB::raw('SUM(ticket_price) as total_ticket_price'),
+            DB::raw('SUM(admin_fee) as total_admin_fee'),
+            DB::raw('SUM(final_price) as total_final_price'),
+        )
+            ->join('auctions', 'units.auction_id', '=', 'auctions.klik_auction_id')
+            ->join('customers', 'auctions.customer_id', '=', 'customers.klik_bidder_id')
+            ->where("payment_status", "UNPAID")
+            ->whereNotNull("reference_id")
+            ->when($from || $to, function ($query) use ($from, $to) {
+                $query->whereBetween('units.paid_date', [$from, $to]);
+            })
+            ->oldest("units.paid_date")
+            ->groupBy("customers.name", "units.paid_date", "units.reference_id")
+            ->get();
+
+        $columns = function ($row) {
+            return [
+                'Nama Bidder' => $row->name,
+                'Tgl Dibayar' => $row->paid_date,
+                'Reference ID' => $row->reference_id,
+                'Total Unit' => (int) $row->total_units,
+                'Harga Terbentuk' => (int) $row->total_price,
+                'Potongan NIPL' => (int) $row->total_admin_fee,
+                'Biaya Admin' => (int) $row->total_ticket_price,
+                'Harga Total' => (int) $row->total_final_price,
+            ];
+        };
+
+        $this->generateExcelReport($data, $columns, $id);
+
+        return response()->download(storage_path('app/public/' . $id), "classification-auto-report.xlsx");
     }
 }

@@ -69,20 +69,19 @@ class InvoiceExternalController extends Controller
         DB::transaction(function () use ($request) {
             $authId = auth()->id();
 
-            $currentYear = date('y');
-            $findLastInvDate = InvoiceExternal::select("created_at")->latest()->first();
-            $lastInvDate = $findLastInvDate->date ?? now();
-            $lastInvYear = Carbon::parse($lastInvDate)->format('y');
-            if ($currentYear > $lastInvYear) {
-                $countInv = 1;
-            } else {
-                $countInv = InvoiceExternal::query()
-                    ->whereNotNull("invoice_external_no")
-                    ->where("created_at", ">=", date('Y') . "-01-01")
-                    ->where("created_at", "<=", date('Y') . "-12-31")
-                    ->count() + 1;
-            }
-            $invoice_no = 'INV/KLIK/' . date("Y") . '/' . date("m") . '/' . Str::padLeft($countInv++, 3, '0');
+            $month = Carbon::parse($request->date)->format('m');
+            $year = Carbon::parse($request->date)->format('Y');
+            $prefix = 'INV/KLIK/' .  $year  . '/' . $month . '/';
+
+            $lastInv = InvoiceExternal::select("invoice_external_no")
+                ->whereNotNull("invoice_external_no")
+                ->where('invoice_external_no', 'ilike', "$prefix%")
+                ->latest('id')
+                ->latest('invoice_external_no')
+                ->first();
+
+            $countInv = $lastInv ? (int) Str::after($lastInv->invoice_external_no, $prefix) + 1 : 1;
+            $invoice_external_no = $prefix . Str::padLeft($countInv, 3, '0');
 
             if ($request->hasFile('attachment')) {
                 $file = (new FileUploadService)->handleUpload($request->file('attachment'));
@@ -111,7 +110,7 @@ class InvoiceExternalController extends Controller
 
             $sql = InvoiceExternal::create($request->safe()->except(['due_date', 'units']) + [
                 'due_date' => $dueDate,
-                'invoice_external_no' => $invoice_no,
+                'invoice_external_no' => $invoice_external_no,
                 'total_unit' => $totalUnit,
                 'total_amount_real' => $sumFeeAmount,
                 'total_amount_manual' => (int)$request->total_amount_manual,
@@ -140,7 +139,7 @@ class InvoiceExternalController extends Controller
             }, "id");
 
             $ledgers[] = [
-                "gl_no" => $invoice_no,
+                "gl_no" => $invoice_external_no,
                 "date" => $request->date,
                 "type" => 'IN',
                 "created_by" => $authId,
@@ -153,7 +152,7 @@ class InvoiceExternalController extends Controller
             ];
 
             $ledgers[] = [
-                "gl_no" => $invoice_no,
+                "gl_no" => $invoice_external_no,
                 "date" => $request->date,
                 "type" => 'IN',
                 "created_by" => $authId,
