@@ -66,8 +66,8 @@ class GeneralLedgerController extends Controller
                 ->latest('id')
                 ->first();
 
-            $countRv = $lastGl ? (int) Str::after($lastGl->gl_no, $prefix) + 1 : 1;
-            $gl_no = $prefix . Str::padLeft($countRv, 5, '0');
+            $countGl = $lastGl ? (int) Str::after($lastGl->gl_no, $prefix) + 1 : 1;
+            $gl_no = $prefix . Str::padLeft($countGl, 5, '0');
 
             $authId = auth()->id();
 

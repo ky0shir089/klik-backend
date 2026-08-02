@@ -108,9 +108,8 @@ class RvClassificationController extends Controller
             ], 403);
         }
 
-        $units = Unit::select('units.id', 'engine_number', 'price', 'admin_fee', 'final_price', 'va_number')
+        $units = Unit::select('units.id', 'engine_number', 'price', 'admin_fee', 'final_price')
             ->join('auctions', 'units.auction_id', '=', 'auctions.klik_auction_id')
-            ->join('customers', 'auctions.customer_id', '=', 'customers.klik_bidder_id')
             ->whereIn('units.id', $request->units)
             ->oldest('final_price')
             ->oldest('auction_date')
@@ -202,10 +201,10 @@ class RvClassificationController extends Controller
                 $unit->save();
 
                 $glInsert[] = [
-                    "gl_no" => "AR #" . $unit->va_number,
+                    "gl_no" => "AR#" . $unit->id,
                     "date" => now(),
                     "type" => 'IN',
-                    "description" => "AR Bidder #" . $unit->va_number,
+                    "description" => "AR Bidder #" . $unit->engine_number,
                     "coa_id" => 157,
                     "debit" => $unit->final_price,
                     "credit" => 0,
@@ -215,10 +214,10 @@ class RvClassificationController extends Controller
                 ];
 
                 $glInsert[] = [
-                    "gl_no" => "AR #" . $unit->va_number,
+                    "gl_no" => "AR#" . $unit->id,
                     "date" => now(),
                     "type" => 'IN',
-                    "description" => "Terima Titipan Pelunasan #" . $unit->va_number,
+                    "description" => "Terima Titipan Pelunasan #" . $unit->engine_number,
                     "coa_id" => 58,
                     "debit" => 0,
                     "credit" => $unit->price,
@@ -228,10 +227,10 @@ class RvClassificationController extends Controller
                 ];
 
                 $glInsert[] = [
-                    "gl_no" => "AR #" . $unit->va_number,
+                    "gl_no" => "AR#" . $unit->id,
                     "date" => now(),
                     "type" => 'IN',
-                    "description" => "Terima Titipan Admin #" . $unit->va_number,
+                    "description" => "Terima Titipan Admin #" . $unit->engine_number,
                     "coa_id" => 59,
                     "debit" => 0,
                     "credit" => $unit->admin_fee,
