@@ -123,7 +123,7 @@ class SelectController extends Controller
     {
         $query = RV::query()
             ->with(["type_trx", "account", "account.bank"])
-            ->where("coa_id", 58)
+            ->whereIn("coa_id", [58, 157])
             ->whereNull("customer_id")
             ->when($request->search, function ($query, $search) {
                 $query->whereAny([

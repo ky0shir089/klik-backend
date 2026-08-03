@@ -123,7 +123,7 @@ class PaymentController extends Controller
             ]);
             $invoice->details()->create([
                 'invoice_id' => $invoice->id,
-                'inv_coa_id' => 58,
+                'inv_coa_id' => 157,
                 'description' => "PELUNASAN FIF",
                 'item_amount' => $totalAmount,
                 'pph_id' => null,
