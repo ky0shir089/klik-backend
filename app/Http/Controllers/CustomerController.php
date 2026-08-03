@@ -141,7 +141,7 @@ class CustomerController extends Controller
             },
             "rvs" => function ($query) {
                 $query->select("customer_id", "id", "rv_no", "date", "description", "ending_balance")
-                    ->where("coa_id", 58)
+                    ->whereIn("coa_id", [58, 157])
                     ->where("ending_balance", ">", 0)
                     ->where("status", "NEW")
                     ->oldest("date")
