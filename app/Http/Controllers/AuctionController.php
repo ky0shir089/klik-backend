@@ -128,6 +128,13 @@ class AuctionController extends Controller
                         $pphAmount = round($feeAmount * 0.02);
                         $netAmount = $feeAmount - $pphAmount;
                         $pejabatLelang = Str::afterLast($lelang['detail_pejabat_lelang']['nama'], " ");
+                        if (isset($unit['refference_id'])) {
+                            $referenceId = $unit['refference_id'] == "-" ? null : $unit['refference_id'];
+                            $paidDate = Carbon::parse($unit['tanggal_pembayaran'])->format("Y-m-d H:i:s");
+                        } else {
+                            $referenceId = null;
+                            $paidDate = null;
+                        }
 
                         $units[] = [
                             'auction_id' => $lelang['id_lelang'],
@@ -150,8 +157,8 @@ class AuctionController extends Controller
                             'color' => $unit['warna'],
                             'year' => $unit['tahun'],
                             'no_lot' => $lelang['no_lot'],
-                            'reference_id' => $unit['refference_id'] == "-" ? null : $unit['refference_id'],
-                            'paid_date' => Carbon::parse($unit['tanggal_pembayaran'])->format("Y-m-d H:i:s"),
+                            'reference_id' => $referenceId,
+                            'paid_date' => $paidDate,
                             'created_by' => $authId,
                             'updated_at' => null
                         ];
