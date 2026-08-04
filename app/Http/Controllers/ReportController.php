@@ -48,7 +48,11 @@ class ReportController extends Controller
 
         $data = RV::query()
             ->whereBetween("date", [$from, $to])
-            ->where("coa_id", $request->type)
+            ->when($request->type == 157, function ($query) {
+                $query->whereIn("coa_id", [58, 157]);
+            }, function ($query) use ($request) {
+                $query->where("coa_id", $request->type);
+            })
             ->where("ending_balance", ">", 0)
             ->get();
 

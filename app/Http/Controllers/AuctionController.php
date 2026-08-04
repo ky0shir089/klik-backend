@@ -65,7 +65,6 @@ class AuctionController extends Controller
         ])->get('https://api.kliklelang.co.id/api/report/v3/hasil_lelang', [
             'date_start' => $request->auction_date,
             'date_end' => $request->auction_date,
-            'id_mst_pembayaran_status' => 2
         ]);
 
         //dev

@@ -93,6 +93,7 @@ class CustomerController extends Controller
             ->join('customers', 'auctions.customer_id', '=', 'customers.klik_bidder_id')
             ->where("payment_status", "UNPAID")
             ->whereNotNull("reference_id")
+            ->whereNotNull("paid_date")
             ->when($request->search, function ($query, $search) {
                 $query->whereAny([
                     "customers.name",
