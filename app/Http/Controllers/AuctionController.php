@@ -122,7 +122,6 @@ class AuctionController extends Controller
                         $hargaTerbentuk = $unit['harga'] - $unit['potongan_tiket'];
                         $titipanByad = round($hargaTerbentuk * 0.006);
                         $byadAmount = $titipanByad > 150000 ? 150000 : $titipanByad;
-                        $adminAmount = $unit['biaya_admin'] - $byadAmount < 0 ? 0 : $unit['biaya_admin'] - $byadAmount;
                         $feeAmount = round($hargaTerbentuk * 0.03);
                         $pphAmount = round($feeAmount * 0.02);
                         $netAmount = $feeAmount - $pphAmount;
@@ -146,8 +145,8 @@ class AuctionController extends Controller
                             'ticket_price' => $unit['potongan_tiket'],
                             'admin_fee' => $unit['biaya_admin'],
                             'final_price' => $unit['harga_total'],
-                            'byad_amount' => $byadAmount,
-                            'admin_amount' => $adminAmount,
+                            'byad_amount' => $titipanByad,
+                            'admin_amount' => $unit['biaya_admin'] - $byadAmount,
                             'fee_amount' => $feeAmount,
                             'pph_amount' => $pphAmount,
                             'net_amount' => $netAmount,
