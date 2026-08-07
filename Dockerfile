@@ -5,7 +5,7 @@ FROM dunglas/frankenphp:1.4.4-php8.4-alpine AS base
 
 ENV TZ=Asia/Jakarta
 
-RUN apk add --no-cache tzdata \
+RUN apk add --no-cache tzdata ghostscript \
     && cp /usr/share/zoneinfo/$TZ /etc/localtime \
     && echo $TZ > /etc/timezone
     
