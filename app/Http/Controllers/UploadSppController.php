@@ -84,6 +84,10 @@ class UploadSppController extends Controller
                             ->first();
 
                         if ($unit) {
+                            if ($unit->spp_status === "UPLOADED") {
+                                throw new \Exception("Unit with police number {$unit->police_number} has already been uploaded.");
+                            }
+
                             $unit->contract_number = $item["contract_number"];
                             $unit->package_number = $item["package_number"];
                             $unit->distributed_price = $item["distributed_price"];
