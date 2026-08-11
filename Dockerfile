@@ -12,6 +12,8 @@ RUN apk add --no-cache tzdata ghostscript \
 RUN install-php-extensions \
     pcntl \
     pdo_mysql \
+    pdo_pgsql \
+    pgsql \
     zip \
     gd \
     intl
