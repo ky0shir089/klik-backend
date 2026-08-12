@@ -60,10 +60,10 @@ class PaymentController extends Controller
         $lastSpp = Payment::select("spp_no")
             ->where('spp_no', 'ilike', "$prefix%")
             ->latest('id')
-            ->orderBy('spp_no', 'desc')
+            ->latest('spp_no')
             ->first();
 
-        $countSpp = $lastSpp ? (int) Str::after($lastSpp->spp_no, $prefix) + 1 : '01';
+        $countSpp = $lastSpp ? (int) Str::after($lastSpp->spp_no, $prefix) + 1 : 1;
         $sppNo = $prefix . $countSpp;
 
         DB::beginTransaction();

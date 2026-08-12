@@ -128,7 +128,7 @@ class AuctionController extends Controller
                         $pejabatLelang = Str::afterLast($lelang['detail_pejabat_lelang']['nama'], " ");
                         if (isset($unit['refference_id'])) {
                             $referenceId = $unit['refference_id'] == "-" ? null : $unit['refference_id'];
-                            $paidDate = Carbon::parse($unit['tanggal_pembayaran'])->format("Y-m-d H:i:s");
+                            $paidDate = $unit['refference_id'] == "" ? null : Carbon::parse($unit['tanggal_pembayaran'])->format("Y-m-d H:i:s");
                         } else {
                             $referenceId = null;
                             $paidDate = null;
