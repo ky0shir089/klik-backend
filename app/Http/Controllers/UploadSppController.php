@@ -75,6 +75,7 @@ class UploadSppController extends Controller
                 foreach ($collections as $rows) {
                     foreach ($rows as $item) {
                         $unit = Unit::query()
+                            ->whereNull("spp_status")
                             ->where(function ($query) use ($item) {
                                 $query->where("police_number", $item["police_number"])
                                     ->orWhere("chassis_number", $item["chassis_number"])
@@ -84,10 +85,6 @@ class UploadSppController extends Controller
                             ->first();
 
                         if ($unit) {
-                            if ($unit->spp_status === "UPLOADED") {
-                                throw new \Exception("Unit with police number {$unit->police_number} has already been uploaded.");
-                            }
-
                             $unit->contract_number = $item["contract_number"];
                             $unit->package_number = $item["package_number"];
                             $unit->distributed_price = $item["distributed_price"];
