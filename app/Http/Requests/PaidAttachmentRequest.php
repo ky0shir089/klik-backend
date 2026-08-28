@@ -25,7 +25,7 @@ class PaidAttachmentRequest extends FormRequest
     {
         return [
             'invoice_id' => ['required', 'integer', 'exists:invoices,id'],
-            'attachment' => ["required", File::types(['pdf'])->max(1024)],
+            'attachments.*' => ["required", File::types(['pdf'])->max(1024)],
         ];
     }
 }

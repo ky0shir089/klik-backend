@@ -75,7 +75,6 @@ class UploadSppController extends Controller
                 foreach ($collections as $rows) {
                     foreach ($rows as $item) {
                         $unit = Unit::query()
-                            ->whereNull("spp_status")
                             ->where(function ($query) use ($item) {
                                 $query->where("police_number", $item["police_number"])
                                     ->orWhere("chassis_number", $item["chassis_number"])
@@ -89,7 +88,7 @@ class UploadSppController extends Controller
                             $unit->package_number = $item["package_number"];
                             $unit->distributed_price = $item["distributed_price"];
                             $unit->diff_price = $item["distributed_price"] - $unit->price + $unit->ticket_price;
-                            $unit->spp_status = "UPLOADED";
+                            $unit->spp_status = $unit->spp_status == NULL ? "UPLOADED" : $unit->spp_status;
                             $unit->updated_by =  $authId;
                             $unit->updated_at = now();
                             $unit->save();

@@ -30,17 +30,34 @@ class PaidAttachmentController extends Controller
             ], 403);
         }
 
-        if ($request->hasFile('attachment')) {
-            $file = (new FileUploadService)->handleUpload($request->file('attachment'));
+        $authId = auth()->id();
+        $files = [];
+
+        if ($request->hasFile('attachments')) {
+            foreach ($request->file('attachments') as $attachment) {
+                $file = (new FileUploadService)->handleUpload($attachment);
+                $files[] = [
+                    'file_upload_id' => $file['id'],
+                    'invoice_id' => $request->invoice_id,
+                    'created_by' => $authId,
+                    'created_at' => now(),
+                ];
+            }
         }
 
-        $sql = PaidAttachment::create($request->safe()->except(["attachment"]) + [
-            'file_upload_id' => $file->id ?? null,
-            'created_by' => auth()->id(),
-            'updated_by' => null,
-        ]);
+        if (empty($files)) {
+            return response()->json([
+                "success" => false,
+                "message" => "No file uploaded",
+            ], 400);
+        }
 
-        return new StoreResource($sql);
+        PaidAttachment::insert($files);
+
+        return response()->json([
+            "success" => true,
+            "message" => "Attachments uploaded successfully",
+        ], 201);
     }
 
     /**
