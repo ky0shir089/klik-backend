@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 
 class WhatsAppService
@@ -10,6 +11,17 @@ class WhatsAppService
      * Create a new class instance.
      */
     public function __construct($invoice, $phone)
+    {
+        DB::afterCommit(function () use ($invoice, $phone) {
+            try {
+                $this->send($invoice, $phone);
+            } catch (\Throwable $th) {
+                report($th);
+            }
+        });
+    }
+
+    private function send($invoice, $phone): void
     {
         $detail = $invoice->load("type_trx:id,name", "user:id,name");
 
@@ -21,15 +33,13 @@ class WhatsAppService
             "Created By: {$detail->user->name}\n\n" .
             "Link: https://keu.klikinternal.com/workflow/inbox/{$invoice->id}";
 
-        $response = Http::withHeaders([
+        Http::withHeaders([
             'X-Device-Id' => 'klikkeuangandev',
             'Content-Type' => 'application/json',
             'Authorization' => 'Basic dXNlcjE6cGFzczE=',
         ])->post('https://wa.dnalab.dev/send/message', [
             'phone' => $phone,
             'message' => $message,
-        ]);
-
-        return;
+        ])->throw();
     }
 }

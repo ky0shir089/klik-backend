@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 
@@ -11,6 +12,17 @@ class FonnteService
      * Create a new class instance.
      */
     public function __construct($invoice, $phone)
+    {
+        DB::afterCommit(function () use ($invoice, $phone) {
+            try {
+                $this->send($invoice, $phone);
+            } catch (\Throwable $th) {
+                report($th);
+            }
+        });
+    }
+
+    public function send($invoice, $phone)
     {
         $detail = $invoice->load("type_trx:id,name", "user:id,name");
 
@@ -36,8 +48,8 @@ class FonnteService
             "data" => json_encode($alldata)
         ];
 
-        Http::withHeaders([
-            'Authorization' => "xfyrovSRhZvKi9IvsYK9",
+        $response = Http::withHeaders([
+            'Authorization' => "cMxPVP36vsYEEyK2vtgU",
         ])->post('https://api.fonnte.com/send', [
             'data' => $data['data'],
         ])->json();

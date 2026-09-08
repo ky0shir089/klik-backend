@@ -23,6 +23,10 @@ class InvoiceRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'status' => [$this->route('invoice') ? 'required' : 'sometimes', 'string', 'in:REQUEST,APPROVE,REJECT,CANCEL'],
+            'wf_history_id' => ['required_if:status,APPROVE,REJECT', 'nullable', 'integer'],
+            'signature' => ['nullable'],
+            'remark' => ['nullable', 'string'],
             'date' => ['required', 'date'],
             'trx_id' => ['required', 'numeric', 'exists:type_trxes,id'],
             'supplier_id' => ['required', 'numeric', 'exists:suppliers,id'],

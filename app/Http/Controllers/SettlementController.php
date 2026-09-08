@@ -221,7 +221,8 @@ class SettlementController extends Controller
 
         DB::transaction(function () use ($request, $settlement) {
             $authId = auth()->id();
-            $invoice = $settlement->invoice;
+            $invoice = Invoice::whereKey($settlement->lpj_invoice_id)->lockForUpdate()->firstOrFail();
+            WorkflowService::assertCanRestart($invoice);
 
             if ($request->hasFile('attachment')) {
                 $file = (new FileUploadService)->handleUpload($request->file('attachment'));

@@ -12,16 +12,16 @@ use App\Models\InvoiceDetail;
 use App\Models\Pph;
 use App\Models\RV;
 use App\Models\Settlement;
-use App\Models\WorkflowApproval;
-use App\Models\WorkflowHistory;
 use App\Services\LpjService;
 use App\Services\FileUploadService;
+use App\Services\FonnteService;
 use App\Services\WhatsAppService;
 use App\Services\WorkflowService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 class InvoiceController extends Controller
 {
@@ -81,6 +81,7 @@ class InvoiceController extends Controller
 
         $query = Invoice::query()
             ->select('invoices.*')
+            ->where('invoices.status', 'REQUEST')
             ->with([
                 "supplier:id,name",
                 "supplier_account:id,account_number,bank_id",
@@ -144,7 +145,7 @@ class InvoiceController extends Controller
                 $file = (new FileUploadService)->handleUpload($request->file('attachment'));
             }
 
-            $sql = Invoice::create($request->safe()->except(["attachment"]) + [
+            $sql = Invoice::create($request->safe()->except(["attachment", "status", "wf_history_id", "signature", "remark"]) + [
                 'invoice_no' => $invoice_no,
                 'file_upload_id' => $file->id ?? null,
                 'created_by' => $authId,
@@ -165,7 +166,7 @@ class InvoiceController extends Controller
             return response()->json([
                 "success" => false,
                 "message" => $th->getMessage(),
-            ], 500);
+            ], $th instanceof HttpExceptionInterface ? $th->getStatusCode() : 500);
         }
 
         return new StoreResource($sql);
@@ -219,18 +220,18 @@ class InvoiceController extends Controller
 
         try {
             $authId = auth()->id();
-
-            if ($request->hasFile('attachment')) {
-                $file = (new FileUploadService)->handleUpload($request->file('attachment'));
-            }
-
-            $invoice->update($request->safe()->except(["attachment"]) + [
-                'file_upload_id' => $file->id ?? $invoice->file_upload_id,
-                'updated_by' => $authId,
-            ]);
+            $invoice = Invoice::whereKey($invoice->id)->lockForUpdate()->firstOrFail();
 
             switch ($request->status) {
                 case 'REQUEST':
+                    WorkflowService::assertCanRestart($invoice);
+                    if ($request->hasFile('attachment')) {
+                        $file = (new FileUploadService)->handleUpload($request->file('attachment'));
+                    }
+                    $invoice->update($request->safe()->except(["attachment", "status", "wf_history_id", "signature", "remark"]) + [
+                        'file_upload_id' => $file->id ?? $invoice->file_upload_id,
+                        'updated_by' => $authId,
+                    ]);
                     $this->handleResubmit($request, $invoice, $authId);
                     break;
                 case 'APPROVE':
@@ -238,9 +239,11 @@ class InvoiceController extends Controller
                     $this->handleWorkflowAction($request, $invoice, $authId);
                     break;
                 case 'CANCEL':
-                    $invoice->pv()->delete();
-                    $invoice->update(['status' => 'CANCEL']);
+                    WorkflowService::assertCanRestart($invoice);
+                    $invoice->update(['status' => 'CANCEL', 'updated_by' => $authId]);
                     break;
+                default:
+                    abort(422, 'Invalid invoice action.');
             }
 
             DB::commit();
@@ -253,7 +256,7 @@ class InvoiceController extends Controller
             return response()->json([
                 "success" => false,
                 "message" => $th->getMessage(),
-            ], 400);
+            ], $th instanceof HttpExceptionInterface ? $th->getStatusCode() : 400);
         }
     }
 
@@ -308,7 +311,19 @@ class InvoiceController extends Controller
 
     private function handleWorkflowAction(InvoiceRequest $request, Invoice $invoice, int $authId): void
     {
-        $history = WorkflowHistory::findOrFail($request->wf_history_id);
+        abort_unless($invoice->status === 'REQUEST', 409, 'Invoice is not awaiting approval.');
+        abort_if($invoice->pv()->exists(), 409, 'Invoice already has a payment voucher.');
+        $approval = $invoice->wf_approval()->first();
+        abort_unless($approval, 409, 'Invoice has no active workflow.');
+
+        $history = $invoice->wf_histories()->whereKey($request->wf_history_id)->first();
+        abort_unless($history, 404, 'Workflow history not found for this invoice.');
+        abort_unless((int) $history->user_id === $authId, 403, 'This workflow step belongs to another user.');
+        abort_unless($history->status === 'PENDING', 409, 'Workflow step has already been processed.');
+        $nextStep = $invoice->wf_histories()->where('status', '!=', 'APPROVE')->first();
+        abort_unless($nextStep && $nextStep->is($history), 409, 'Workflow step is out of order.');
+
+        $invoice->update(['updated_by' => $authId]);
         $history->update([
             'status' => $request->status,
             'signature' => $request->signature,
@@ -328,31 +343,16 @@ class InvoiceController extends Controller
             return;
         }
 
-        $approval = WorkflowApproval::where([
-            "processable_type" => Invoice::class,
-            "processable_id" => $invoice->id
-        ])
-            ->first();
-        $approval->increment("approve_count");
+        $approvedCount = $invoice->wf_histories()->where('status', 'APPROVE')->count();
+        $approval->update(['approve_count' => $approvedCount]);
 
-        // Notify next person in sequence
-        $nextStep = WorkflowHistory::where([
-            "processable_type" => Invoice::class,
-            "processable_id" => $invoice->id,
-            "sequence" => $approval->approve_count + 1
-        ])
-            ->first();
-        if ($nextStep) {
+        // Notify the next unfinished step; only approved histories count toward completion.
+        $nextStep = $invoice->wf_histories()->where('status', '!=', 'APPROVE')->first();
+        if ($nextStep && $nextStep->status === 'PENDING') {
             (new WhatsAppService($invoice, $nextStep->user->phone));
         }
 
-        // Finalize if all steps approved
-        $totalSteps = WorkflowHistory::where([
-            "processable_type" => Invoice::class,
-            "processable_id" => $invoice->id
-        ])
-            ->count();
-        if ($approval->approve_count === $totalSteps) {
+        if ($approvedCount > 0 && !$nextStep) {
             $invoice->update(['status' => 'APPROVE']);
             (new WhatsAppService($invoice, '6289518901400'));
 

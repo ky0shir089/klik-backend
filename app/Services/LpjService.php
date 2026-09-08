@@ -35,6 +35,20 @@ class LpjService
             ];
 
             foreach ($invoice->details as $detail) {
+                $ppnAmount = 0;
+
+                if ($detail->ppn_rate > 0) {
+                    $ppnAmount = round($detail->item_amount * ($detail->ppn_rate / 100));
+
+                    $debit2 = [
+                        ...$gl,
+                        "description" => $detail->description,
+                        "coa_id" => 151,
+                        "debit" => $ppnAmount,
+                        "credit" => 0,
+                    ];
+                }
+
                 $ledger[] = [
                     ...$gl,
                     "description" => $detail->description,
@@ -42,6 +56,9 @@ class LpjService
                     "debit" => $detail->item_amount,
                     "credit" => 0,
                 ];
+                if ($ppnAmount > 0) {
+                    $ledger[] = $debit2;
+                }
             }
 
             $ledger[] = [
