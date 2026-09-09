@@ -313,46 +313,74 @@ class InvoiceController extends Controller
     {
         abort_unless($invoice->status === 'REQUEST', 409, 'Invoice is not awaiting approval.');
         abort_if($invoice->pv()->exists(), 409, 'Invoice already has a payment voucher.');
+
         $approval = $invoice->wf_approval()->first();
-        abort_unless($approval, 409, 'Invoice has no active workflow.');
+        $hasWorkflow = $approval || $invoice->wf_histories()->exists();
+        $isFinalApproval = false;
 
-        $history = $invoice->wf_histories()->whereKey($request->wf_history_id)->first();
-        abort_unless($history, 404, 'Workflow history not found for this invoice.');
-        abort_unless((int) $history->user_id === $authId, 403, 'This workflow step belongs to another user.');
-        abort_unless($history->status === 'PENDING', 409, 'Workflow step has already been processed.');
-        $nextStep = $invoice->wf_histories()->where('status', '!=', 'APPROVE')->first();
-        abort_unless($nextStep && $nextStep->is($history), 409, 'Workflow step is out of order.');
+        if ($hasWorkflow) {
+            abort_unless($approval, 409, 'Invoice has no active workflow.');
 
-        $invoice->update(['updated_by' => $authId]);
-        $history->update([
-            'status' => $request->status,
-            'signature' => $request->signature,
-            'remark' => $request->remark
-        ]);
+            $history = $invoice->wf_histories()->whereKey($request->wf_history_id)->first();
+            abort_unless($history, 404, 'Workflow history not found for this invoice.');
+            abort_unless((int) $history->user_id === $authId, 403, 'This workflow step belongs to another user.');
+            abort_unless($history->status === 'PENDING', 409, 'Workflow step has already been processed.');
+            $nextStep = $invoice->wf_histories()->where('status', '!=', 'APPROVE')->first();
+            abort_unless($nextStep && $nextStep->is($history), 409, 'Workflow step is out of order.');
 
-        if ($request->status === 'REJECT') {
-            $invoice->update(['status' => 'REJECT']);
-            if ($invoice->payment_method === 'PREPAYMENT') {
-                Settlement::where("lpj_invoice_id", $invoice->id)
-                    ->update([
-                        'lpj_invoice_id' => null,
-                        'lpj_amount' => 0,
-                        'status' => 'NEW'
-                    ]);
+            $invoice->update(['updated_by' => $authId]);
+            $history->update([
+                'status' => $request->status,
+                'signature' => $request->signature,
+                'remark' => $request->remark
+            ]);
+
+            if ($request->status === 'REJECT') {
+                $invoice->update(['status' => 'REJECT']);
+                if ($invoice->payment_method === 'PREPAYMENT') {
+                    Settlement::where("lpj_invoice_id", $invoice->id)
+                        ->update([
+                            'lpj_invoice_id' => null,
+                            'lpj_amount' => 0,
+                            'status' => 'NEW'
+                        ]);
+                }
+                return;
             }
-            return;
+
+            $approvedCount = $invoice->wf_histories()->where('status', 'APPROVE')->count();
+            $approval->update(['approve_count' => $approvedCount]);
+
+            // Notify the next unfinished step; only approved histories count toward completion.
+            $nextStep = $invoice->wf_histories()->where('status', '!=', 'APPROVE')->first();
+            if ($nextStep && $nextStep->status === 'PENDING') {
+                (new WhatsAppService($invoice, $nextStep->user->phone));
+            }
+
+            $isFinalApproval = $approvedCount > 0 && !$nextStep;
+        } else {
+            $invoice->update([
+                'updated_by' => $authId,
+                'signature' => $request->signature ?? $invoice->signature,
+            ]);
+
+            if ($request->status === 'REJECT') {
+                $invoice->update(['status' => 'REJECT']);
+                if ($invoice->payment_method === 'PREPAYMENT') {
+                    Settlement::where("lpj_invoice_id", $invoice->id)
+                        ->update([
+                            'lpj_invoice_id' => null,
+                            'lpj_amount' => 0,
+                            'status' => 'NEW'
+                        ]);
+                }
+                return;
+            }
+
+            $isFinalApproval = true;
         }
 
-        $approvedCount = $invoice->wf_histories()->where('status', 'APPROVE')->count();
-        $approval->update(['approve_count' => $approvedCount]);
-
-        // Notify the next unfinished step; only approved histories count toward completion.
-        $nextStep = $invoice->wf_histories()->where('status', '!=', 'APPROVE')->first();
-        if ($nextStep && $nextStep->status === 'PENDING') {
-            (new WhatsAppService($invoice, $nextStep->user->phone));
-        }
-
-        if ($approvedCount > 0 && !$nextStep) {
+        if ($isFinalApproval) {
             $invoice->update(['status' => 'APPROVE']);
             (new WhatsAppService($invoice, '6289518901400'));
 

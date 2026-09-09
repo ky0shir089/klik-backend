@@ -187,4 +187,16 @@ DB::rollBack();
 check(count(Http::recorded()) === $sent, 'Rolled-back workflow must not send a notification.');
 check(!$unconfigured->wf_histories()->exists(), 'Rollback must undo workflow initialization.');
 
+$noWorkflowInvoice = $newInvoice(false);
+check($act($noWorkflowInvoice, 'APPROVE') === 200, 'Invoice without workflow must be directly approvable.');
+check($noWorkflowInvoice->fresh()->status === 'APPROVE' && $noWorkflowInvoice->pv()->count() === 1, 'Approval without workflow must create a PV.');
+
+$noWorkflowReject = $newInvoice(false);
+check($act($noWorkflowReject, 'REJECT') === 200, 'Invoice without workflow must be rejectable.');
+check($noWorkflowReject->fresh()->status === 'REJECT' && !$noWorkflowReject->pv()->exists(), 'Rejection without workflow must not create a PV.');
+
+$noWorkflowLpj = $newInvoice(false, 'PREPAYMENT');
+check($act($noWorkflowLpj, 'APPROVE') === 200, 'Prepayment invoice without workflow must approve.');
+check($noWorkflowLpj->fresh()->status === 'PAID' && !$noWorkflowLpj->pv()->exists(), 'Prepayment without workflow must finalize via LpjService.');
+
 print "Invoice workflow checks passed. PostgreSQL concurrency is not covered.\n";
