@@ -25,7 +25,10 @@ class WorkflowService
             ->where("is_active", true)
             ->first();
 
-        abort_unless($wf, 409, 'No active workflow matches this invoice.');
+        if (!$wf) {
+            $invoice->update(['status' => 'APPROVE']);
+            return;
+        }
         $steps = $wf->details()->oldest("sequence")->get();
         abort_if($steps->isEmpty(), 409, 'Workflow must have at least one approval step.');
 

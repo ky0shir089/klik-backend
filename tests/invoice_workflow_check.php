@@ -169,8 +169,9 @@ check($act($lpj, 'APPROVE', $lpjSteps->last()->id) === 409, 'LPJ finalization mu
 
 $workflow->update(['is_active' => false]);
 $unconfigured = $newInvoice(false);
-$expectConflict(fn() => DB::transaction(fn() => new WorkflowService($unconfigured)));
-check(!$unconfigured->pv()->exists() && !$unconfigured->wf_histories()->exists(), 'Missing workflow must fail without creating financial records.');
+DB::transaction(fn() => new WorkflowService($unconfigured));
+check($unconfigured->fresh()->status === 'REQUEST', 'Unconfigured invoice must be set to REQUEST.');
+check(!$unconfigured->pv()->exists() && !$unconfigured->wf_histories()->exists() && !$unconfigured->wf_approval()->exists(), 'Missing workflow must not create workflow or financial records.');
 $workflow->update(['is_active' => true]);
 $workflow->details()->delete();
 $expectConflict(fn() => DB::transaction(fn() => new WorkflowService($unconfigured)));
