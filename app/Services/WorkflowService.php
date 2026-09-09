@@ -27,6 +27,15 @@ class WorkflowService
 
         if (!$wf) {
             $invoice->update(['status' => 'APPROVE']);
+            $invoice->pv()->create([
+                "payment_method" => $invoice->payment_method,
+                "supplier_id" => $invoice->supplier_id,
+                "supplier_account_id" => $invoice->payment_method == "BANK" ? $invoice->supplier_account_id : null,
+                "pv_amount" => $invoice->total_amount,
+                "status" => "NEW",
+                "trx_dtl_id" => $invoice->trx_id,
+                "created_by" => auth()->id(),
+            ]);
             return;
         }
         $steps = $wf->details()->oldest("sequence")->get();
