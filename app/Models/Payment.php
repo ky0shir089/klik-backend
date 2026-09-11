@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 
@@ -53,5 +54,10 @@ class Payment extends Model
     public function rv(): HasOneThrough
     {
         return $this->HasOneThrough(RV::class, PaymentRv::class, 'payment_id', 'id', 'id', 'rv_id');
+    }
+
+    public function invoice(): HasOne
+    {
+        return $this->hasOne(Invoice::class, 'invoice_no', 'spp_no');
     }
 }

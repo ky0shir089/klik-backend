@@ -92,13 +92,16 @@ class ReportController extends Controller
                 "classifications:unit_id,rv_id",
                 "classifications.rv:id,rv_no,date,starting_balance",
                 "spp.detail",
-                "spp.detail.pv:spp_id,pv_no,paid_date"
+                "spp.detail.pv_inv:spp_id,spp_no",
+                "spp.detail.pv_inv.invoice:invoice_no,id",
+                "spp.detail.pv_inv.invoice.pv:processable_id,pv_no,paid_date",
             ])
             ->whereHas("auction", function ($query) use ($from, $to) {
                 $query->whereBetween("auction_date", [$from, $to]);
             })
             ->oldest("id")
             ->get();
+        info($data);
 
         $columns = function ($row) {
             $rvNo = [];
@@ -133,8 +136,8 @@ class ReportController extends Controller
                 'Selisih' => $row->diff_price,
                 'Nomor Paket' => $row->package_number,
                 'Nomor Kontrak' => $row->contract_number,
-                'No PV' => $row->spp?->detail?->pv?->pv_no,
-                'Tgl PV' => $row->spp?->detail?->pv?->paid_date,
+                'No PV' => $row->spp?->detail?->pv_inv?->invoice?->pv?->pv_no,
+                'Tgl PV' => $row->spp?->detail?->pv_inv?->invoice?->pv?->paid_date,
                 'Reference ID' => $row->reference_id,
                 'Paid Date' => $row->paid_date,
             ];
