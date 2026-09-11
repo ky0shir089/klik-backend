@@ -224,7 +224,6 @@ class InvoiceController extends Controller
 
             switch ($request->status) {
                 case 'REQUEST':
-                    WorkflowService::assertCanRestart($invoice);
                     if ($request->hasFile('attachment')) {
                         $file = (new FileUploadService)->handleUpload($request->file('attachment'));
                     }
@@ -239,7 +238,6 @@ class InvoiceController extends Controller
                     $this->handleWorkflowAction($request, $invoice, $authId);
                     break;
                 case 'CANCEL':
-                    WorkflowService::assertCanRestart($invoice);
                     $invoice->update(['status' => 'CANCEL', 'updated_by' => $authId]);
                     break;
                 default:
