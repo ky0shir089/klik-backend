@@ -101,7 +101,6 @@ class ReportController extends Controller
             })
             ->oldest("id")
             ->get();
-        info($data);
 
         $columns = function ($row) {
             $rvNo = [];

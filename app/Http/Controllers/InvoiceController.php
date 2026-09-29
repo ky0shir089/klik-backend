@@ -239,6 +239,7 @@ class InvoiceController extends Controller
                     break;
                 case 'CANCEL':
                     $invoice->update(['status' => 'CANCEL', 'updated_by' => $authId]);
+                    $invoice->pv()->delete();
                     break;
                 default:
                     abort(422, 'Invalid invoice action.');
