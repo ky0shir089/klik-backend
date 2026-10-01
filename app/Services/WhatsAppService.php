@@ -2,44 +2,78 @@
 
 namespace App\Services;
 
+use Closure;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Throwable;
 
 class WhatsAppService
 {
-    /**
-     * Create a new class instance.
-     */
-    public function __construct($invoice, $phone)
+    public function __construct($invoice = null, ?string $phone = null)
     {
-        DB::afterCommit(function () use ($invoice, $phone) {
+        if ($invoice && $phone) {
+            $this->send($invoice, $phone);
+        }
+    }
+
+    public function send($invoice, ?string $phone): void
+    {
+        $this->dispatch($phone, fn () => $this->baseMessage($invoice));
+    }
+
+    public function reject($invoice, ?string $phone, ?string $remark = null): void
+    {
+        $this->dispatch($phone, function () use ($invoice, $remark) {
+            $reason = $remark ?: '-';
+
+            return $this->baseMessage($invoice) . "\n\n" .
+                "Mohon maaf, invoice anda ditolak\n" .
+                "Karena: {$reason}\n" .
+                "Silahkan periksa kembali invoice anda.";
+        });
+    }
+
+    private function dispatch(?string $phone, Closure $messageResolver): void
+    {
+        if (!$phone) {
+            return;
+        }
+
+        DB::afterCommit(function () use ($phone, $messageResolver) {
             try {
-                $this->send($invoice, $phone);
-            } catch (\Throwable $th) {
+                $this->postMessage($phone, $messageResolver());
+            } catch (Throwable $th) {
                 report($th);
             }
         });
     }
 
-    private function send($invoice, $phone): void
+    private function baseMessage($invoice): string
     {
-        $detail = $invoice->load("type_trx:id,name", "user:id,name");
+        $invoice->loadMissing('type_trx:id,name', 'user:id,name');
 
-        $message = "*KLIK INVOICE*\n\n" .
+        return "*KLIK INVOICE*\n\n" .
             "Tanggal: {$invoice->date}\n" .
             "Invoice No: {$invoice->invoice_no}\n" .
-            "Type Trx: {$detail->type_trx->name}\n" .
+            "Type Trx: {$invoice->type_trx?->name}\n" .
             "Deskripsi: {$invoice->description}\n" .
-            "Created By: {$detail->user->name}\n\n" .
+            "Created By: {$invoice->user?->name}\n\n" .
             "Link: https://keu.klikinternal.com/workflow/inbox/{$invoice->id}";
+    }
 
+    private function postMessage(string $phone, string $message): void
+    {
         Http::withHeaders([
             'X-Device-Id' => 'klikkeuangandev',
-            'Content-Type' => 'application/json',
             'Authorization' => 'Basic dXNlcjE6cGFzczE=',
-        ])->post('https://wa.dnalab.dev/send/message', [
+        ])
+        ->timeout(10)
+        ->connectTimeout(3)
+        ->retry(2, 100)
+        ->post('https://wa.dnalab.dev/send/message', [
             'phone' => $phone,
             'message' => $message,
-        ])->throw();
+        ])
+        ->throw();
     }
 }

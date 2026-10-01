@@ -341,9 +341,10 @@ class InvoiceController extends Controller
                         ->update([
                             'lpj_invoice_id' => null,
                             'lpj_amount' => 0,
-                            'status' => 'NEW'
+                            'status' => 'OPEN'
                         ]);
                 }
+                (new WhatsAppService())->reject($invoice, $invoice->user->phone, $request->remark);
                 return;
             }
 
@@ -370,9 +371,10 @@ class InvoiceController extends Controller
                         ->update([
                             'lpj_invoice_id' => null,
                             'lpj_amount' => 0,
-                            'status' => 'NEW'
+                            'status' => 'OPEN'
                         ]);
                 }
+                (new WhatsAppService())->reject($invoice, $invoice->user->phone, $request->remark);
                 return;
             }
 
