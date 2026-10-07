@@ -188,7 +188,7 @@ class ReportController extends Controller
         ];
 
         $headerBank = [
-            'date' => count($gl) > 0 ? $gl[0]->coa->description : $data[0]->coa->description,
+            'date' => $gl->first()?->coa?->description ?? $data->first()?->coa?->description ?? '',
             'description' => '',
             'gl_no' => '',
             'debit' => '',
@@ -416,7 +416,7 @@ class ReportController extends Controller
         ];
 
         $headerKas = [
-            'date' => count($gl) > 0 ? $gl[0]->coa->description : $data[0]->coa->description,
+            'date' => $gl->first()?->coa?->description ?? $data->first()?->coa?->description ?? '',
             'description' => '',
             'gl_no' => '',
             'debit' => '',
@@ -737,5 +737,58 @@ class ReportController extends Controller
         $this->generateExcelReport($data, $columns, $id);
 
         return response()->download(storage_path('app/public/' . $id), "classification-auto-report.xlsx");
+    }
+
+    public function reportTitipanBidder(Request $request)
+    {
+        if (!auth()->user()->tokenCan("report-titipan-bidder:download")) {
+            return response()->json([
+                "success" => false,
+                "message" => "Unauthorized",
+            ], 403);
+        }
+
+        $id = "reports/titipan-bidder/" . Str::random(6) . ".xlsx";
+        $directory = storage_path('app/public/reports/titipan-bidder');
+        if (!file_exists($directory)) {
+            mkdir($directory, 0755, true);
+        }
+        $from = Carbon::parse($request->from . " 00:00:00");
+        $to = Carbon::parse($request->to . " 23:59:59");
+
+        $data = RV::select("date", "description", "rv_no", "starting_balance")
+            ->withSum([
+                "classifications" => function ($query) use ($from, $to) {
+                    $query->whereBetween("created_at", [$from, $to]);
+                }
+            ], "unit_final_price")
+            ->whereIn("coa_id", [58, 157])
+            ->where(function ($query) use ($from, $to) {
+                $query->whereRelation("classifications", function ($query) use ($from, $to) {
+                    $query->whereBetween("created_at", [$from, $to]);
+                })
+                    ->orWhere(function ($query) use ($from, $to) {
+                        $query->whereBetween("date", [$from, $to]);
+                    });
+            })
+            ->oldest("id")
+            ->get();
+
+        $columns = function ($row) {
+            $used = (int) $row->classifications_sum_unit_final_price > $row->starting_balance ? (int) $row->starting_balance : (int) $row->classifications_sum_unit_final_price;
+
+            return [
+                'Date' => $row->date,
+                'Description' => $row->description,
+                'RV No' => $row->rv_no,
+                'Nominal RV' => (int) $row->starting_balance,
+                'Pemakaian' => $used,
+                'Sisa Titipan' => (int) $row->starting_balance - $used,
+            ];
+        };
+
+        $this->generateExcelReport($data, $columns, $id);
+
+        return response()->download(storage_path('app/public/' . $id), "titipan-bidder-report.xlsx");
     }
 }

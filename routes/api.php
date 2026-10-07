@@ -190,6 +190,7 @@ Route::middleware('auth:sanctum')
                         Route::post('list-unit-pelunasan', [ReportController::class, 'listUnitPelunasan']);
                         Route::post('report-invoice-external', [ReportController::class, 'reportInvoiceExternal']);
                         Route::post('report-classification-auto', [ReportController::class, 'reportClassificationAuto']);
+                        Route::post('report-titipan-bidder', [ReportController::class, 'reportTitipanBidder']);
                     });
             });
 
