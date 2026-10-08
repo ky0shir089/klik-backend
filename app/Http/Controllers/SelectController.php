@@ -95,7 +95,12 @@ class SelectController extends Controller
         $isTeamKlik = auth()->user()->role->id == 3;
 
         $query = TypeTrx::query()
-            ->with(["trx_dtl", "trx_dtl.coa"])
+            ->with([
+                "trx_dtl" => function ($query) {
+                    $query->where("is_active", true);
+                },
+                "trx_dtl.coa"
+            ])
             ->where("is_active", true)
             ->when($request->in_out, function ($query, $in_out) {
                 $query->where("in_out", $in_out);

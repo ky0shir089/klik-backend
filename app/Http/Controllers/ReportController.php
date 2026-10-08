@@ -92,7 +92,7 @@ class ReportController extends Controller
                 "classifications:unit_id,rv_id",
                 "classifications.rv:id,rv_no,date,starting_balance",
                 "spp.detail",
-                "spp.detail.pv_inv:spp_id,spp_no",
+                "spp.detail.pv_inv:id,spp_no",
                 "spp.detail.pv_inv.invoice:invoice_no,id",
                 "spp.detail.pv_inv.invoice.pv:processable_id,pv_no,paid_date",
             ])
@@ -101,6 +101,7 @@ class ReportController extends Controller
             })
             ->oldest("id")
             ->get();
+        info($data);
 
         $columns = function ($row) {
             $rvNo = [];
