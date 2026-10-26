@@ -1,7 +1,7 @@
 # =======================
 # Base runtime (PHP 8.4)
 # =======================
-FROM dunglas/frankenphp:1.4.4-php8.4-alpine AS base
+FROM dunglas/frankenphp:1.13.2-php8.4.27-alpine AS base
 
 ENV TZ=Asia/Jakarta
 
@@ -21,7 +21,7 @@ RUN install-php-extensions \
 # =======================
 # Composer stage (PHP 8.4)
 # =======================
-FROM php:8.4-cli-alpine AS vendor
+FROM php:8.4.27-cli-alpine AS vendor
 
 RUN apk add --no-cache \
     git \
