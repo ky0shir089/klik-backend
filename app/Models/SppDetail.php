@@ -44,4 +44,9 @@ class SppDetail extends Model
     {
         return $this->hasOneThrough(Payment::class, PaymentDetail::class, 'spp_id', 'id', 'spp_id', 'payment_id');
     }
+
+    public function payment_detail(): HasOne
+    {
+        return $this->hasOne(PaymentDetail::class, 'spp_id', 'spp_id');
+    }
 }

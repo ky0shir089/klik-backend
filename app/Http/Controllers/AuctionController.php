@@ -9,6 +9,7 @@ use App\Http\Resources\StoreResource;
 use App\Http\Resources\UpdateResource;
 use App\Models\Auction;
 use App\Models\Customer;
+use App\Models\SppDetail;
 use App\Models\Transaction;
 use App\Models\Unit;
 use Carbon\Carbon;
@@ -85,17 +86,18 @@ class AuctionController extends Controller
 
         $results = $response["data"] ?? [];
 
-        $customers = [];
-        $auctions = [];
-        $units = [];
-        $transactions = [];
+        $customers = collect();
+        $auctions = collect();
+        $units = collect();
+        $transactions = collect();
         $authId = auth()->id();
+        $now = now();
 
         DB::beginTransaction();
 
         try {
             foreach ($results as $customer) {
-                $customers[] = [
+                $customers->push([
                     'klik_bidder_id' => $customer["id_bidder"],
                     'ktp' => $customer["identitas_ktp"],
                     'name' => $customer["nama_ktp"],
@@ -103,11 +105,11 @@ class AuctionController extends Controller
                     'phone' => $customer["nomor_hp"] ?? null,
                     'address' => $customer["alamat_ktp"] ?? null,
                     'created_by' => $authId,
-                    'updated_at' => null
-                ];
+                    'updated_at' => $now
+                ]);
 
                 foreach ($customer['lelang'] as $lelang) {
-                    $auctions[] = [
+                    $auctions->push([
                         'customer_id' => $customer["id_bidder"],
                         'klik_auction_id' => $lelang['id_lelang'],
                         'auction_name' => $lelang['nama_lelang'],
@@ -115,8 +117,8 @@ class AuctionController extends Controller
                         'branch_id' => $lelang['id_cabang'],
                         'branch_name' => $lelang['balai_lelang'],
                         'created_by' => $authId,
-                        'updated_at' => null
-                    ];
+                        'updated_at' => $now
+                    ]);
 
                     foreach ($lelang['unit'] as $unit) {
                         $hargaTerbentuk = $unit['harga'] - $unit['potongan_tiket'];
@@ -134,7 +136,7 @@ class AuctionController extends Controller
                             $paidDate = Carbon::parse($unit['tanggal_pembayaran'])->format("Y-m-d H:i:s");
                         }
 
-                        $units[] = [
+                        $units->push([
                             'auction_id' => $lelang['id_lelang'],
                             'klik_unit_id' => $unit['id_unit'],
                             'lot_number' => $lelang['no_lot'],
@@ -158,32 +160,49 @@ class AuctionController extends Controller
                             'reference_id' => $referenceId,
                             'paid_date' => $paidDate,
                             'created_by' => $authId,
-                            'updated_at' => null
-                        ];
+                            'updated_at' => $now
+                        ]);
 
-                        if (isset($customer['transaksi'])) {
-                            foreach ($customer['transaksi'] as $transaction) {
-                                $transactions[] = [
-                                    'unit_id' => $unit['id_unit'],
-                                    'date' => $transaction['tanggal_upload'],
-                                    'receipt_link' => $transaction['url'],
-                                    'created_by' => $authId,
-                                    'created_at' => now(),
-                                    'updated_at' => null
-                                ];
-                            }
+                        foreach ($customer['transaksi'] ?? [] as $transaction) {
+                            $transactions->push([
+                                'unit_id' => $unit['id_unit'],
+                                'date' => $transaction['tanggal_upload'],
+                                'receipt_link' => $transaction['url'],
+                                'created_by' => $authId,
+                                'created_at' => $now,
+                                'updated_at' => $now
+                            ]);
                         }
                     }
                 }
             }
 
-            $unitCollection = collect($units);
-            $uniqueUnits = $unitCollection->reverse()->unique("klik_unit_id")->reverse()->values()->toArray();
+            $unitIds = $units->pluck("klik_unit_id");
+            $existingUnits = Unit::query()
+                ->select("id", "klik_unit_id")
+                ->whereIn("klik_unit_id", $unitIds)
+                ->get();
+            $unitCollection = $units;
 
-            Customer::upsert($customers, ["klik_bidder_id"]);
-            Auction::upsert($auctions, ["customer_id", "klik_auction_id"]);
+            if ($existingUnits->isNotEmpty()) {
+                $fixedUnitIds = SppDetail::query()
+                    ->whereHas("payment_detail", function ($query) use ($existingUnits) {
+                        $query->whereIn("unit_id", $existingUnits->pluck("id"));
+                    })
+                    ->pluck("unit_id");
+                $fixedKlikUnitIds = $existingUnits
+                    ->whereIn("id", $fixedUnitIds)
+                    ->pluck("klik_unit_id");
+
+                $unitCollection = $unitCollection->whereNotIn("klik_unit_id", $fixedKlikUnitIds);
+            }
+
+            $uniqueUnits = $unitCollection->reverse()->unique("klik_unit_id")->reverse()->values()->all();
+
+            Customer::upsert($customers->all(), ["klik_bidder_id"]);
+            Auction::upsert($auctions->all(), ["customer_id", "klik_auction_id"]);
             Unit::upsert($uniqueUnits, ["klik_unit_id"]);
-            Transaction::insert($transactions);
+            Transaction::insert($transactions->all());
 
             DB::commit();
         } catch (\Throwable $th) {
