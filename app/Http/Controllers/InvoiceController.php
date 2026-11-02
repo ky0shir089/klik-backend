@@ -384,6 +384,7 @@ class InvoiceController extends Controller
         if ($isFinalApproval) {
             $invoice->update(['status' => 'APPROVE']);
             (new WhatsAppService($invoice, '6289518901400'));
+            (new WhatsAppService($invoice, '6281298724181'));
 
             if ($invoice->payment_method !== "PREPAYMENT") {
                 $invoice->pv()->create([
