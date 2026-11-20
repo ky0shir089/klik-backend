@@ -240,6 +240,12 @@ class InvoiceController extends Controller
                 case 'CANCEL':
                     $invoice->update(['status' => 'CANCEL', 'updated_by' => $authId]);
                     $invoice->pv()->delete();
+
+                    $invoice->details->each(function ($detail) {
+                        if ($detail->rv_id) {
+                            RV::find($detail->rv_id)->update(['status' => 'NEW']);
+                        }
+                    });
                     break;
                 default:
                     abort(422, 'Invalid invoice action.');

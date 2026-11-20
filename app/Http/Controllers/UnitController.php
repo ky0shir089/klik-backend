@@ -50,7 +50,7 @@ class UnitController extends Controller
         $message = "";
         $code = 400;
 
-        DB::transaction(function () use ($unit, &$success, &$message) {
+        DB::transaction(function () use ($unit, &$success, &$message, &$code) {
             $unit->update([
                 "payment_status" => "UNPAID",
                 'updated_by' => auth()->id(),
@@ -74,6 +74,7 @@ class UnitController extends Controller
                 $code = 200;
             } else {
                 $message = "Unit tidak bisa di cancel karena menggunakan lebih dari 1 RV";
+                $code = 400;
             }
         });
 
