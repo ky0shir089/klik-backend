@@ -29,24 +29,24 @@ class SppV2Controller extends Controller
         $offset = ($page - 1) * $rows;
 
         //prod
-        // $response = Http::withHeaders([
-        //     'Authorization' => 'Bearer ' . config('services.klik')['token'],
-        // ])->get('https://api.kliklelang.co.id/api/transaksi/v5/spp/list', [
-        //     'id_mst_status_spp' => $request->id_mst_spp_status,
-        //     'limit' => $rows,
-        //     'offset' => $offset,
-        //     'search' => $request->search,
-        // ]);
-
-        //dev
         $response = Http::withHeaders([
-            'Authorization' => 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJjbGllbnRfaWQiOjE1NTA3LCJjbGllbnRfcGxhdGZvcm0iOiJtb2JpbGUiLCJjbGllbnRfcm9sZSI6InVzZXIiLCJjbGllbnRfdHlwZSI6InJlZ3VsZXIiLCJleHAiOjIwODYxNjE3NDN9.agXJOdVofDxZ8QP6ZG2AK__iVcUdBXF0GLZPZUnW_MM',
-        ])->get('https://api.devlmu.com/kliklelang/transaksi/api/transaksi/v5/spp/list', [
+            'Authorization' => 'Bearer ' . config('services.klik')['token'],
+        ])->get('https://api.kliklelang.co.id/api/transaksi/v5/spp/list', [
             'id_mst_status_spp' => $request->id_mst_spp_status,
             'limit' => $rows,
             'offset' => $offset,
             'search' => $request->search,
         ]);
+
+        //dev
+        // $response = Http::withHeaders([
+        //     'Authorization' => 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJjbGllbnRfaWQiOjE1NTA3LCJjbGllbnRfcGxhdGZvcm0iOiJtb2JpbGUiLCJjbGllbnRfcm9sZSI6InVzZXIiLCJjbGllbnRfdHlwZSI6InJlZ3VsZXIiLCJleHAiOjIwODYxNjE3NDN9.agXJOdVofDxZ8QP6ZG2AK__iVcUdBXF0GLZPZUnW_MM',
+        // ])->get('https://api.devlmu.com/kliklelang/transaksi/api/transaksi/v5/spp/list', [
+        //     'id_mst_status_spp' => $request->id_mst_spp_status,
+        //     'limit' => $rows,
+        //     'offset' => $offset,
+        //     'search' => $request->search,
+        // ]);
 
         if ($response->forbidden()) {
             return response()->json([
@@ -87,14 +87,14 @@ class SppV2Controller extends Controller
         }
 
         //prod
-        // $response = Http::withHeaders([
-        //     'Authorization' => 'Bearer ' . config('services.klik')['token'],
-        // ])->get('https://api.kliklelang.co.id/api/transaksi/v5/spp/detail/' . $request->sppV2);
+        $response = Http::withHeaders([
+            'Authorization' => 'Bearer ' . config('services.klik')['token'],
+        ])->get('https://api.kliklelang.co.id/api/transaksi/v5/spp/detail/' . $request->sppV2);
 
         //dev
-        $response = Http::withHeaders([
-            'Authorization' => 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJjbGllbnRfaWQiOjE1NTA3LCJjbGllbnRfcGxhdGZvcm0iOiJtb2JpbGUiLCJjbGllbnRfcm9sZSI6InVzZXIiLCJjbGllbnRfdHlwZSI6InJlZ3VsZXIiLCJleHAiOjIwODYxNjE3NDN9.agXJOdVofDxZ8QP6ZG2AK__iVcUdBXF0GLZPZUnW_MM',
-        ])->get('https://api.devlmu.com/kliklelang/transaksi/api/transaksi/v5/spp/detail/' . $request->sppV2);
+        // $response = Http::withHeaders([
+        //     'Authorization' => 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJjbGllbnRfaWQiOjE1NTA3LCJjbGllbnRfcGxhdGZvcm0iOiJtb2JpbGUiLCJjbGllbnRfcm9sZSI6InVzZXIiLCJjbGllbnRfdHlwZSI6InJlZ3VsZXIiLCJleHAiOjIwODYxNjE3NDN9.agXJOdVofDxZ8QP6ZG2AK__iVcUdBXF0GLZPZUnW_MM',
+        // ])->get('https://api.devlmu.com/kliklelang/transaksi/api/transaksi/v5/spp/detail/' . $request->sppV2);
 
         if ($response->forbidden()) {
             return response()->json([
@@ -165,14 +165,14 @@ class SppV2Controller extends Controller
         }
 
         //prod
-        // $response = Http::withHeaders([
-        //     'Authorization' => 'Bearer ' . config('services.klik')['token'],
-        // ])->get('https://api.kliklelang.co.id/api/transaksi/v5/spp/detail/' . $request->spp_id);
+        $response = Http::withHeaders([
+            'Authorization' => 'Bearer ' . config('services.klik')['token'],
+        ])->get('https://api.kliklelang.co.id/api/transaksi/v5/spp/detail/' . $request->spp_id);
 
         //dev
-        $response = Http::withHeaders([
-            'Authorization' => 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJjbGllbnRfaWQiOjE1NTA3LCJjbGllbnRfcGxhdGZvcm0iOiJtb2JpbGUiLCJjbGllbnRfcm9sZSI6InVzZXIiLCJjbGllbnRfdHlwZSI6InJlZ3VsZXIiLCJleHAiOjIwODYxNjE3NDN9.agXJOdVofDxZ8QP6ZG2AK__iVcUdBXF0GLZPZUnW_MM',
-        ])->get('https://api.devlmu.com/kliklelang/transaksi/api/transaksi/v5/spp/detail/' . $request->spp_id);
+        // $response = Http::withHeaders([
+        //     'Authorization' => 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJjbGllbnRfaWQiOjE1NTA3LCJjbGllbnRfcGxhdGZvcm0iOiJtb2JpbGUiLCJjbGllbnRfcm9sZSI6InVzZXIiLCJjbGllbnRfdHlwZSI6InJlZ3VsZXIiLCJleHAiOjIwODYxNjE3NDN9.agXJOdVofDxZ8QP6ZG2AK__iVcUdBXF0GLZPZUnW_MM',
+        // ])->get('https://api.devlmu.com/kliklelang/transaksi/api/transaksi/v5/spp/detail/' . $request->spp_id);
 
         if ($response->forbidden()) {
             return response()->json([
@@ -192,22 +192,22 @@ class SppV2Controller extends Controller
 
         DB::transaction(function () use ($request) {
             //prod
-            // $response = Http::withHeaders([
-            //     'Authorization' => 'Bearer ' . config('services.klik')['token'],
-            // ])->post('https://api.kliklelang.co.id/api/transaksi/v5/siskeu/sync-status', [
-            //     'spp_id' => $request->spp_id,
-            //     'status' => $request->status,
-            //     'alasan' => $request->alasan,
-            // ]);
-
-            //dev
             $response = Http::withHeaders([
-                'Authorization' => 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJjbGllbnRfaWQiOjE1NTA3LCJjbGllbnRfcGxhdGZvcm0iOiJtb2JpbGUiLCJjbGllbnRfcm9sZSI6InVzZXIiLCJjbGllbnRfdHlwZSI6InJlZ3VsZXIiLCJleHAiOjIwODYxNjE3NDN9.agXJOdVofDxZ8QP6ZG2AK__iVcUdBXF0GLZPZUnW_MM',
-            ])->post('https://api.devlmu.com/kliklelang/transaksi/api/transaksi/v5/siskeu/sync-status', [
+                'Authorization' => 'Bearer ' . config('services.klik')['token'],
+            ])->post('https://api.kliklelang.co.id/api/transaksi/v5/siskeu/sync-status', [
                 'spp_id' => $request->spp_id,
                 'status' => $request->status,
                 'alasan' => $request->alasan,
             ]);
+
+            //dev
+            // $response = Http::withHeaders([
+            //     'Authorization' => 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJjbGllbnRfaWQiOjE1NTA3LCJjbGllbnRfcGxhdGZvcm0iOiJtb2JpbGUiLCJjbGllbnRfcm9sZSI6InVzZXIiLCJjbGllbnRfdHlwZSI6InJlZ3VsZXIiLCJleHAiOjIwODYxNjE3NDN9.agXJOdVofDxZ8QP6ZG2AK__iVcUdBXF0GLZPZUnW_MM',
+            // ])->post('https://api.devlmu.com/kliklelang/transaksi/api/transaksi/v5/siskeu/sync-status', [
+            //     'spp_id' => $request->spp_id,
+            //     'status' => $request->status,
+            //     'alasan' => $request->alasan,
+            // ]);
 
             if ($response->forbidden()) {
                 return response()->json([

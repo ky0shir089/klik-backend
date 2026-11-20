@@ -61,21 +61,21 @@ class AuctionController extends Controller
         }
 
         //prod
-        // $response = Http::withHeaders([
-        //     'Authorization' => 'Bearer ' . config('services.klik')['token'],
-        // ])->get('https://api.kliklelang.co.id/api/report/v3/hasil_lelang', [
-        //     'date_start' => $request->auction_date,
-        //     'date_end' => $request->auction_date,
-        // ]);
-
-        //dev
         $response = Http::withHeaders([
-            'Authorization' => 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJjbGllbnRfaWQiOjE1NTA3LCJjbGllbnRfcGxhdGZvcm0iOiJtb2JpbGUiLCJjbGllbnRfcm9sZSI6InVzZXIiLCJjbGllbnRfdHlwZSI6InJlZ3VsZXIiLCJleHAiOjIwODYxNjE3NDN9.agXJOdVofDxZ8QP6ZG2AK__iVcUdBXF0GLZPZUnW_MM',
-        ])->get('https://api.devlmu.com/kliklelang/report/api/report/v3/hasil_lelang', [
+            'Authorization' => 'Bearer ' . config('services.klik')['token'],
+        ])->get('https://api.kliklelang.co.id/api/report/v3/hasil_lelang', [
             'date_start' => $request->auction_date,
             'date_end' => $request->auction_date,
-            'id_mst_pembayaran_status' => 2
         ]);
+
+        //dev
+        // $response = Http::withHeaders([
+        //     'Authorization' => 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJjbGllbnRfaWQiOjE1NTA3LCJjbGllbnRfcGxhdGZvcm0iOiJtb2JpbGUiLCJjbGllbnRfcm9sZSI6InVzZXIiLCJjbGllbnRfdHlwZSI6InJlZ3VsZXIiLCJleHAiOjIwODYxNjE3NDN9.agXJOdVofDxZ8QP6ZG2AK__iVcUdBXF0GLZPZUnW_MM',
+        // ])->get('https://api.devlmu.com/kliklelang/report/api/report/v3/hasil_lelang', [
+        //     'date_start' => $request->auction_date,
+        //     'date_end' => $request->auction_date,
+        //     'id_mst_pembayaran_status' => 2
+        // ]);
 
         if (!isset($response["data"])) {
             return response()->json([
