@@ -99,15 +99,6 @@ class PaymentController extends Controller
 
             $sql->spps()->createMany($customers);
 
-            // $sql->pv()->create([
-            //     "supplier_id" => 1,
-            //     "supplier_account_id" => 1,
-            //     "pv_amount" => $totalAmount,
-            //     "status" => "NEW",
-            //     "trx_dtl_id" => 2,
-            //     "created_by" => auth()->id(),
-            // ]);
-
             $invoice = Invoice::create([
                 'date' => now(),
                 'invoice_no' => $sppNo,
@@ -123,7 +114,7 @@ class PaymentController extends Controller
             ]);
             $invoice->details()->create([
                 'invoice_id' => $invoice->id,
-                'inv_coa_id' => 157,
+                'inv_coa_id' => 58,
                 'description' => "PELUNASAN FIF",
                 'item_amount' => $totalAmount,
                 'pph_id' => null,
